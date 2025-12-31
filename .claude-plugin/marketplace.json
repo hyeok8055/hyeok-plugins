@@ -1,0 +1,11 @@
+{
+  "name": "hyeok-plugins",
+  "version": "1.0.0",
+  "description": "hyeok8055의 커스텀 Claude 플러그인 마켓플레이스",
+  "plugins": [
+    {
+      "name": "typst-korean",
+      "source": "./plugins/typst-korean"
+    }
+  ]
+}
