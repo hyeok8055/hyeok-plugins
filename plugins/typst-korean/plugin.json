@@ -1,7 +1,7 @@
 {
   "name": "typst-korean",
-  "version": "1.0.0",
-  "description": "Typst 문서 작성 지원 - 프리텐다드 폰트 기본 설정 및 한글 타이포그래피",
+  "version": "1.1.0",
+  "description": "Typst 문서 작성 지원 - 다양한 한글 폰트 선택 및 한글 타이포그래피",
   "author": {
     "name": "hyeok8055",
     "url": "https://github.com/hyeok8055"
@@ -9,5 +9,21 @@
   "license": "MIT",
   "homepage": "https://github.com/hyeok8055/typst-korean",
   "repository": "https://github.com/hyeok8055/typst-korean",
-  "keywords": ["typst", "korean", "hangul", "pretendard", "typography"]
+  "keywords": ["typst", "korean", "hangul", "pretendard", "typography", "noto", "slide"],
+  "engines": {
+    "typst": ">=0.11.0"
+  },
+  "config": {
+    "defaultFont": "Pretendard",
+    "defaultPaperSize": "a4",
+    "supportedFonts": [
+      "Pretendard",
+      "Noto Sans KR",
+      "Noto Serif KR",
+      "NanumGothicCoding",
+      "D2Coding",
+      "IBM Plex Sans KR",
+      "Spoqa Han Sans Neo"
+    ]
+  }
 }
