@@ -1,3 +1,116 @@
+# hyeok-plugins
+
+hyeok8055의 Claude 플러그인 마켓플레이스. 두 플러그인 제공:
+
+- **typst-korean** — Typst 한글 문서(PDF·장표·보고서) 작성 지원.
+- **hyeok-governance** — caveman(출력 스타일) · ponytail(코드 최소화) · typst-korean(한글 문서)
+  세 스킬의 **우선순위·역할을 충돌 없이 분배**하고 Claude Code / Codex CLI / Grok CLI 전반에
+  걸쳐 강제하는 크로스호스트 거버넌스 계층.
+
+---
+
+# hyeok-governance — 크로스호스트 거버넌스
+
+## 무엇을 하나
+
+세 도구를 **직교(orthogonal)** 계층으로 분리해 서로 겹치지 않게 한다:
+
+| 계층 | 스킬 | 맡는 것 | 강도 |
+|------|------|---------|------|
+| 1 | **caveman** | 대화 **말투** (간결) — 항상 켜짐 | **ULTRA** (기본) |
+| 2 | **ponytail** | **실행·배포 코드** 양 (최소-단 부실 금지) | FULL (기본) |
+| 3 | **typst-korean** | Typst 한글 문서 생산 (**명시 요청 시만**) | 옵트인 |
+
+**핵심 원칙: substance > style.** caveman은 말투만 바꾼다 — 코드 블록, 디스크에 쓰는 파일,
+커밋/PR 텍스트, 보안 분석, 사용자가 요청한 문서 내용, 다른 계층이 강제한 필수 질문은
+**절대 압축·생략 안 함**. ponytail은 실행 코드에만 적용되고 문서 내용은 못 깎는다.
+typst-korean은 코드를 건드리지 않는다. 전체 규칙: `plugins/hyeok-governance/GOVERNANCE.md`.
+
+## 정직한 한계
+
+LLM은 설정만으로 100% 물리적 강제 불가. 여기서 "강제" = 매 세션(Claude는 매 턴) 규칙을
+**컨텍스트로 자동 주입**하는 것 — 하드 게이트(코드 편집 차단) 없음(부작용 없는 최강 방식,
+사용자 선택). 비순응 턴을 물리적으로 막진 못하니 의도로 따른다.
+
+## 설치
+
+### 1) Claude Code (플러그인)
+
+```bash
+/plugin marketplace add hyeok8055/hyeok-plugins
+/plugin install hyeok-governance@hyeok8055-hyeok-plugins
+/plugin install typst-korean@hyeok8055-hyeok-plugins
+```
+
+설치하면 SessionStart 훅이 `GOVERNANCE.md` 전체를, UserPromptSubmit 훅이 매 턴 한 줄
+리마인더를 주입한다. 훅은 fail-open(에러나면 빈 컨텍스트, 턴 절대 안 막음).
+
+### 2) Codex CLI · Grok CLI (설치 스크립트)
+
+레포 클론 후:
+
+```bash
+# macOS / Linux / WSL
+./install.sh                 # 로컬 설정만 (기본)
+./install.sh --upstream      # caveman 공식 설치기도 자동 실행
+
+# Windows PowerShell
+./install.ps1
+./install.ps1 -UpstreamInstall
+```
+
+스크립트가 하는 일 (공식 표준 준수):
+- 호스트 자동 감지(claude/codex/grok) — 없는 건 건너뜀.
+- caveman `config.json` `defaultMode=ultra`, ponytail `defaultMode=full` 설정
+  (BOM 없이 기록 — Node `JSON.parse` 호환). **전역 환경변수 안 씀**.
+- **Codex**: Codex가 실제 읽는 전역 파일에 `GOVERNANCE.md`를 sentinel 블록으로 병합.
+  Codex는 `~/.codex/AGENTS.override.md`가 있으면 그걸, 없으면 `~/.codex/AGENTS.md`를 읽고
+  (override가 base를 *대체*함) → 우린 그중 **실제 읽히는 파일**에 병합해 유저 내용 보존.
+  최초 1회 `.pre-hyeok.bak` 백업, 재실행해도 중복 없음(idempotent), 한글 보존(UTF-8).
+- **Grok (xAI Grok Build, 공식)**: Grok Build는 Claude 컨벤션 호환(`docs.x.ai/build`,
+  config `~/.grok`)이라 **상시주입 최강 경로 = 이 `hyeok-governance` 플러그인 그대로 설치**
+  → SessionStart 훅이 매 세션 주입. 설치기는 보조로 user 스킬
+  `~/.agents/skills/{hyeok-governance,typst-korean}/SKILL.md` + config(ultra/full)도 깔아둠.
+  설치 후 `grok inspect`로 로드 확인.
+
+### 강도 정책
+
+- **caveman = ULTRA** (사용자 지정). caveman 자체 `config.json defaultMode`로 고정 →
+  caveman에만 영향, 되돌리기 가능, 환경 오염 없음. 세션 중 `/caveman full`로 낮출 수 있음.
+- **ponytail = FULL** (기본; 과도한 최소화는 opt-in). `/ponytail ultra`로 올릴 수 있음.
+
+### 되돌리기
+
+```bash
+./uninstall.sh      # 또는 Windows: ./uninstall.ps1
+```
+
+sentinel 블록 제거, 백업 복원, `defaultMode` 핀 제거, flag·복사 스킬 삭제.
+
+### 표준 준수 검증 (공식 문서 대조)
+
+- **Claude**: `plugin.json`은 `.claude-plugin/plugin.json`(공식 위치), 컴포넌트는 플러그인
+  루트(`skills/`, `hooks/`). 훅은 `hooks/hooks.json` 자동 발견, `${CLAUDE_PLUGIN_ROOT}`
+  공식 변수, 훅 출력 `hookSpecificOutput.additionalContext` 계약 준수. `claude plugin validate`로
+  확인 가능.
+- **Codex**: 전역 지침은 `~/.codex/AGENTS.md`(override 있으면 그게 *대체*). 우린 실제 읽히는
+  파일에 병합 → 유저 전역 지침 안 잃음.
+- **Grok Build (xAI)**: Claude 호환 확인(`docs.x.ai/build`, 공식 발표). config `~/.grok` 확인.
+  플러그인(훅) 경로로 상시주입. `grok inspect`로 실제 로드 확인.
+
+### 알려진 한계 (residual risks)
+
+- LLM은 설정만으로 100% 강제 불가 — 상시 주입이 최강(하드 게이트 없음).
+- **Codex**: 전역 SessionStart 훅은 공식 보장 안 됨 → 정적 `AGENTS.md` 로드 의존
+  (아주 긴 세션에선 규칙이 컨텍스트에서 밀릴 수 있음).
+- **Grok Build**: 공식 docs(`docs.x.ai/build`)의 deep 페이지(skills/AGENTS 정확 경로)는
+  JS 렌더라 직접 못 박음 → config `~/.grok` + "Claude 컨벤션 호환" 공식 명시에 근거해
+  **플러그인 경로**를 1순위로 씀(검증된 Claude 플러그인 구조 그대로). 보조 user 스킬은
+  버전에 따라 안 잡힐 수 있음(그래서 플러그인이 1순위). `grok inspect`로 확인 권장.
+- **superagent grok-cli**(다른 제품): `~/.grok` + `~/.agents/skills/` 확인됨. 설치기가 그 경로도 깔아 호환.
+
+---
+
 # typst-korean
 
 Claude Code 플러그인 - Typst 한글 문서 작성 지원

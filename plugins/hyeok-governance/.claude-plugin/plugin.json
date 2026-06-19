@@ -1,0 +1,13 @@
+{
+  "name": "hyeok-governance",
+  "version": "1.0.0",
+  "description": "크로스호스트 에이전트 거버넌스 - caveman(출력스타일) + ponytail(코드정책) + typst-korean(한글문서) 우선순위·역할 분배 강제. Claude Code / Codex CLI / Grok CLI.",
+  "author": {
+    "name": "hyeok8055",
+    "url": "https://github.com/hyeok8055"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/hyeok8055/hyeok-plugins",
+  "repository": "https://github.com/hyeok8055/hyeok-plugins",
+  "keywords": ["governance", "caveman", "ponytail", "typst-korean", "hooks", "policy", "cross-host"]
+}

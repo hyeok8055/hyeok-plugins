@@ -1,6 +1,6 @@
 ---
 name: typst-korean
-description: Typst 문서 작성을 도와줍니다. 다양한 한글 폰트를 선택할 수 있고 (기본값: 프리텐다드), 한글 문서에 적합한 설정을 안내합니다. Typst 문법, 폰트 설정, 페이지 레이아웃 관련 질문에 사용합니다.
+description: Typst로 한글 문서를 작성할 때 쓴다. 사용자가 typst를 명시적으로 요청했거나(예 "typst로 PDF 만들어", "typst-korean으로"), .typ 파일을 작업할 때만 활성화한다. 폰트(기본값 Pretendard)·CJK 타이포그래피·페이지 레이아웃을 설정. 트리거 - typst, .typ, "typst로 만들어". 단순 "PDF/장표/보고서 만들어줘"(typst 언급 없음)에는 자동으로 쓰지 않는다 — typst는 옵트인, 기본 문서 도구 아님. 코드 작업은 ponytail 담당.
 allowed-tools: Read, Write, Edit, Bash, Glob
 file-patterns: ["**/*.typ"]
 ---
@@ -8,6 +8,14 @@ file-patterns: ["**/*.typ"]
 # Typst Korean - 한글 문서 작성 지원
 
 Typst로 한글 문서를 작성할 때 도움을 제공합니다.
+
+## 역할 (hyeok-governance 계층 3)
+
+- **활성 조건**: 사용자가 **typst를 명시적으로 요청**했을 때, 또는 `.typ` 파일을 작업할 때만.
+  단순 "PDF/장표/보고서 만들어줘"(typst 언급 없음)에는 **자동으로 쓰지 않음** — typst는 옵트인.
+- **담당(활성 시)**: Typst 한글 **문서 생산**. 코드 파일 안의 Typst/Markdown 마크업 리터럴도 소관.
+- **비담당**: 실행·배포 **코드**(→ ponytail), 대화 말투(→ caveman).
+- 폰트 선택 질문은 **필수 절차** — caveman 간결 모드라도 선택지·추천을 생략하지 말 것.
 
 ## 지원 폰트 (상업적 사용 무료)
 

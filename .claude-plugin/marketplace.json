@@ -4,13 +4,17 @@
     "name": "hyeok8055"
   },
   "metadata": {
-    "description": "hyeok8055의 커스텀 Claude 플러그인 마켓플레이스",
-    "version": "1.0.0"
+    "description": "hyeok8055의 커스텀 Claude 플러그인 마켓플레이스 - 한글 문서(typst) + 크로스호스트 거버넌스(caveman/ponytail/typst)",
+    "version": "2.0.0"
   },
   "plugins": [
     {
       "name": "typst-korean",
       "source": "./plugins/typst-korean"
+    },
+    {
+      "name": "hyeok-governance",
+      "source": "./plugins/hyeok-governance"
     }
   ]
 }
