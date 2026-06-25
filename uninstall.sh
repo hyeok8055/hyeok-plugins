@@ -6,6 +6,8 @@
 set -u
 BEGIN='<!-- BEGIN hyeok-gov -->'
 END='<!-- END hyeok-gov -->'
+IBEGIN='<!-- BEGIN hyeok-insane-search -->'
+IEND='<!-- END hyeok-insane-search -->'
 info() { echo "[hyeok] $1"; }
 
 restore_or_strip() {
@@ -15,13 +17,26 @@ restore_or_strip() {
     info "restored $path from backup"
   elif [ -f "$path" ]; then
     tmp=$(mktemp)
-    sed "/$BEGIN/,/$END/d" "$path" > "$tmp"
+    # strip BOTH hyeok regions (governance + insane-search) via literal-marker awk
+    awk -v b="$BEGIN" -v e="$END" 'BEGIN{s=0} $0==b{s=1} s==0{print} $0==e{s=0}' "$path" \
+      | awk -v b="$IBEGIN" -v e="$IEND" 'BEGIN{s=0} $0==b{s=1} s==0{print} $0==e{s=0}' > "$tmp"
     if [ -s "$tmp" ] && grep -q '[^[:space:]]' "$tmp"; then
-      printf '%s\n' "$(cat "$tmp")" > "$path"; info "stripped governance block from $path"
+      printf '%s\n' "$(cat "$tmp")" > "$path"; info "stripped hyeok blocks from $path"
     else
-      rm -f "$path"; info "removed $path (was only governance)"
+      rm -f "$path"; info "removed $path (was only hyeok blocks)"
     fi
     rm -f "$tmp"
+  fi
+}
+
+# Remove a vendored insane-search dir ONLY if our .hyeok-vendor marker is present.
+remove_vendor() {
+  dir="$1"
+  if [ -f "$dir/.hyeok-vendor" ]; then
+    rm -rf "$dir" && info "removed vendored insane-search dir $dir"
+  elif [ -f "$dir/SKILL.md.pre-hyeok.bak" ]; then
+    cp "$dir/SKILL.md.pre-hyeok.bak" "$dir/SKILL.md"; rm -f "$dir/SKILL.md.pre-hyeok.bak"
+    info "restored user-owned insane-search SKILL.md in $dir"
   fi
 }
 
@@ -59,5 +74,10 @@ remove_default_mode ponytail
 for s in ".agents/skills/hyeok-governance/SKILL.md" ".agents/skills/typst-korean/SKILL.md" ".agents/skills/typst-korean/reference.md"; do
   [ -f "$HOME/$s" ] && { rm -f "$HOME/$s"; info "removed grok skill file $s"; }
 done
+
+# insane-search vendored engines (marker-guarded)
+remove_vendor "$HOME/.codex/tools/insane-search"
+remove_vendor "$HOME/.agents/skills/insane-search"
+info "Note: pip packages (curl_cffi/bs4/pyyaml) are intentionally NOT uninstalled."
 
 info "Uninstall complete. (Plugin: /plugin uninstall hyeok-governance@... ; caveman/ponytail keep their own uninstallers.)"

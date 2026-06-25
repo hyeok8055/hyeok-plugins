@@ -38,15 +38,32 @@ fallbacks), CJK typography (leading 1.5em docs / 1.2em slides, justify, A4 margi
 templates `/new`, `/new-report`, `/new-slide`, `/pdf`, and the mandated clarifying step —
 **ask which font and surface the recommendation** (mandated substance, see §3).
 
-**Layer 4 — insane-search (web / data / research retrieval — FORCED default, Claude Code only).**
-For ANY web search, data lookup, or research request, route through **insane-search** — it
-is the standing retrieval tool. It handles blocked/`403`/CAPTCHA/WAF, social, JS-heavy, and
-RSS sites (X, Reddit, YouTube, HN, Naver, arXiv, GitHub, Stack Overflow, …) and
-auto-engages when a normal fetch is blocked. **FORCE policy: use it by default, do NOT ask.**
-Do not silently fall back to a plain web search and give up on blocked content — just run
-the search normally and let insane-search escalate. **Availability: Claude Code ONLY**
-(no Codex/Grok support). On Codex/Grok, use the host's best available search and note that
-insane-search is not available there.
+**Layer 4 — insane-search (web / data / research retrieval — DEFAULT retrieval tool, CROSS-HOST with per-host enforcement).**
+For ANY web search, data lookup, or research request, route through **insane-search** when it is
+available on this host. It handles blocked/`403`/`402`/CAPTCHA/WAF, social, JS-heavy, and RSS sites
+(X, Reddit, YouTube, HN, Naver, arXiv, GitHub, Stack Overflow, Coupang, LinkedIn, Medium, Substack,
+Mastodon, …) and escalates Phase 0 (official APIs) → Phases 1-2 (curl_cffi TLS impersonation) →
+Phase 3 (headless browser). **Use it by default, do NOT ask.** Do not silently fall back to a plain
+fetch and give up on blocked content — invoke the engine and let it escalate.
+
+**Enforcement differs by host — this is the honest truth, not a uniform "FORCED":**
+- **Claude Code** — the skill AUTO-ACTIVATES on search intent (real trigger); Phase 3 uses the
+  in-session Playwright MCP. Full coverage. Ships via the auto-installed plugin dependency.
+- **Grok Build** — installed as a user skill at `~/.agents/skills/insane-search/`; AUTO-ACTIVATES
+  like on Claude. Phases 0-2 full. Phase 3 is UNVERIFIED: the engine emits Claude-style
+  `mcp__playwright__*` names and only signals that a browser is needed; if Grok's Playwright MCP
+  tools differ, Phase 3 degrades to the best Phase 0-2 result.
+- **Codex CLI** — NO skill auto-activation: enforcement is THIS instruction only (as strong as the
+  governance text on Codex, i.e. honored by intent, not a hard gate). Invoke via the launcher in
+  `~/.codex/tools/insane-search/`. Phases 0-2 full. Phase 3 is NOT available transparently — the
+  engine exits with a "browser phase needed" summary; return the best Phase 0-2 result, do not loop.
+
+**Availability is conditional — never pretend.** On Grok/Codex the engine is vendored at install
+only when Python 3 and git are present and deps install; the installer bakes the validated absolute
+interpreter into a launcher (resolving `python3`/`python`/`py -3`, rejecting the Windows MS-Store
+stub) and installs `curl_cffi`, `beautifulsoup4`, `pyyaml`. **If the engine, a real Python 3, or the
+deps are absent on this host, say so plainly and use the host's best available search — do not claim
+the engine ran.** On Claude this is handled by the bundled plugin and is always present.
 
 ## 2. Task router — when each layer fires
 
@@ -61,7 +78,9 @@ insane-search is not available there.
 
 - **insane-search**: ANY web search / data lookup / research intent. Korean triggers: 검색,
   찾아, 찾아줘, 자료, 리서치, 조사, 알아봐; English: search, look up, find online, research,
-  "what are people saying". **FORCE — use it by default, do not ask.** Claude Code only.
+  "what are people saying". **Use it by default, do not ask** — when available on this host
+  (Claude: auto plugin; Grok: user skill; Codex: launcher via this instruction). If not
+  vendored / no Python, say so and use the host's best search.
 
 If none of ponytail / typst-korean / insane-search fires (pure Q&A with no search, no code,
 no Typst), only caveman applies.
@@ -133,6 +152,6 @@ caveman = **how you TALK** (always; conversation only; never the whitelist).
 ponytail = **how much EXECUTABLE code you write** (minimal-but-not-negligent; code artifacts only).
 typst-korean = **how you build KOREAN TYPST DOCUMENTS** (EXPLICIT request only — not the
 default for generic PDF/장표/보고서; owns embedded Typst document payload when invoked).
-insane-search = **how you SEARCH** (any web/data/research retrieval; FORCED default; Claude
-Code only).
+insane-search = **how you SEARCH** (any web/data/research retrieval; default tool; cross-host —
+auto on Claude/Grok, instruction-driven on Codex; conditional on Python+engine being present).
 Style yields to substance; substance splits by semantic role, not just file type.

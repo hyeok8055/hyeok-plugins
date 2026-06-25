@@ -20,21 +20,26 @@ hyeok8055의 Claude 플러그인 마켓플레이스. 두 플러그인 제공:
 | 1 | **caveman** | 대화 **말투** (간결) — 항상 켜짐 | **ULTRA** (기본) |
 | 2 | **ponytail** | **실행·배포 코드** 양 (최소-단 부실 금지) | FULL (기본) |
 | 3 | **typst-korean** | Typst 한글 문서 생산 (**명시 요청 시만**) | 옵트인 |
-| 4 | **insane-search** | 웹·자료·리서치 **검색** (차단/소셜/JS 우회) | **강제** (Claude 전용) |
+| 4 | **insane-search** | 웹·자료·리서치 **검색** (차단/소셜/JS 우회) | 기본 사용 (크로스호스트) |
 
 **핵심 원칙: substance > style.** caveman은 말투만 바꾼다 — 코드 블록, 디스크에 쓰는 파일,
 커밋/PR 텍스트, 보안 분석, 사용자가 요청한 문서 내용, 다른 계층이 강제한 필수 질문은
 **절대 압축·생략 안 함**. ponytail은 실행 코드에만 적용되고 문서 내용은 못 깎는다.
-typst-korean은 코드를 건드리지 않는다. **insane-search는 웹/자료/리서치 검색 요청 시 무조건
-사용(안 물어봄), Claude 전용.** 전체 규칙: `plugins/hyeok-governance/GOVERNANCE.md`.
+typst-korean은 코드를 건드리지 않는다. **insane-search는 웹/자료/리서치 검색 요청 시 기본 사용
+(안 물어봄)** — 단 강제 *방식*은 호스트마다 다름(아래). 전체 규칙: `plugins/hyeok-governance/GOVERNANCE.md`.
 
-### insane-search 자동설치 (Claude)
+### insane-search 설치 — 크로스호스트 (엔진 = `python3 -m engine`, 포터블)
 
-`hyeok-governance`가 `dependencies: ["insane-search"]`로 선언 + 이 마켓플레이스에 insane-search를
-외부 소스(`github:fivetaku/insane-search`)로 등록 → **hyeok-governance 설치 시 Claude Code가
-insane-search를 자동 전이설치**(내 마켓플레이스만 추가하면 됨, gptaku 마켓 별도 추가 불필요).
-API 키 불필요, 의존성 첫 사용 시 자동설치. **Claude Code 전용**(codex/grok 미지원 → 거기선
-호스트 기본 검색).
+- **Claude** (자동): `hyeok-governance`가 `dependencies: ["insane-search"]` 선언 + 이 마켓플레이스에
+  insane-search를 외부 소스(`github:fivetaku/insane-search`)로 등록 → **설치 시 자동 전이설치**(내
+  마켓만 추가하면 됨). 스킬 자동활성, phase3는 인세션 Playwright MCP. 항상 존재.
+- **Codex / Grok Build** (`install.{ps1,sh} --upstream` 필요): 엔진을 git clone(v0.8.2 핀)·벤더링하고
+  런처(`run-engine`, 검증된 절대 Python 경로 박음)+deps(curl_cffi/bs4/pyyaml) 설치. **Codex**는 실제
+  읽는 AGENTS 파일에 호출 지시 블록(별도 sentinel) 병합 — 스킬 자동활성 없어 *지시 기반* 강제.
+  **Grok**은 `~/.agents/skills/insane-search/` user 스킬로 자동활성. Python3 없으면 skip+경고(fail-open).
+- **정직한 제약**: ① **Python 3 필요**(없으면 호스트 기본 검색). ② **phase3(헤드리스 브라우저)는
+  Claude만 완전** — codex/grok은 `mcp__playwright__*` 신호만 받고 phase0-2(TLS 위장)로 깨끗이 축소
+  (행 안 걸림, rc=1+요약). ③ `--upstream`은 git clone + 전역 pip = 네트워크/설치 부작용이라 **기본 off**.
 
 ## 정직한 한계
 

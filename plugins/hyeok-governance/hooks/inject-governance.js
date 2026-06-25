@@ -16,7 +16,8 @@ const ONELINER =
   "[hyeok-governance] Standing orders: caveman ULTRA skins your conversation only " +
   "(terse). ponytail = minimal-but-not-negligent on executable/shippable code. " +
   "typst-korean = Typst docs on EXPLICIT request only (not default for generic PDF/장표/보고서). " +
-  "insane-search = FORCED default for ANY web/data/research search, do not ask (Claude only). " +
+  "insane-search = default tool for ANY web/data/research search, do not ask; cross-host " +
+  "(auto on Claude/Grok, launcher+instruction on Codex) when present, else say so & use host search. " +
   "Substance > style. NEVER compress code blocks, files-on-disk, commit/PR text, security " +
   "analysis, document content, or mandated clarifying questions. No hard gates — comply by intent.";
 

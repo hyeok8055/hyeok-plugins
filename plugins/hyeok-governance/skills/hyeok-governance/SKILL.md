@@ -16,7 +16,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 | 1 | **caveman** (ULTRA, 항상) | 대화 **말투** (간결) | 코드/파일내용/커밋/PR/보안/문서내용/필수질문 = 그대로 |
 | 2 | **ponytail** (FULL) | **실행·배포 코드** 양 (최소-단 부실 금지) | 대화 말투, 문서 내용, 표시용 예제코드 |
 | 3 | **typst-korean** | Typst 한글 문서 생산 (**명시 요청 시만**) | 실행 코드, 말투, 일반 PDF 자동선택 |
-| 4 | **insane-search** | 웹·자료·리서치 **검색** (**강제**, Claude 전용) | 코드, 문서 생성, 말투 |
+| 4 | **insane-search** | 웹·자료·리서치 **검색** (기본 사용, 크로스호스트) | 코드, 문서 생성, 말투 |
 
 ## 라우팅
 
@@ -24,8 +24,10 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 - **ponytail**: 코드/구현/기능/스크립트/함수/수정/리팩터 — 실행·배포될 코드.
 - **typst-korean**: 사용자가 **typst를 명시 요청**했거나 `.typ` 파일 작업 시에만. 일반
   "PDF/장표/보고서 만들어줘"(typst 언급 없음)엔 자동으로 안 씀 — 옵트인.
-- **insane-search**: 웹/자료/리서치 **검색**(검색·찾아·자료·리서치·조사) — **무조건 사용,
-  안 물어봄**. 차단/소셜/JS 사이트 자동 우회. **Claude 전용**(codex/grok 미지원).
+- **insane-search**: 웹/자료/리서치 **검색**(검색·찾아·자료·리서치·조사) — **기본 사용,
+  안 물어봄**. 차단/소셜/JS 사이트 자동 우회(`python3 -m engine`). **크로스호스트**: Claude=자동
+  플러그인, Grok=user 스킬 자동, Codex=런처+AGENTS.md 지시. Python·engine 없으면 솔직히 말하고
+  호스트 기본 검색. phase3(브라우저)는 Claude만 완전, codex/grok은 phase0-2로 축소될 수 있음.
 
 ## 충돌 해소 (요약)
 
@@ -52,5 +54,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
   Grok Build(Claude 호환)는 이 플러그인을 그대로 설치하면 훅 상시주입도 동작.
 - caveman/ponytail 은 각자 설치기로 끌어오고 `config.json defaultMode`로 강도 고정
   (caveman=ultra, ponytail=full).
-- **insane-search**: 이 플러그인의 `dependencies`로 선언 → hyeok-governance 설치 시
-  Claude Code가 마켓플레이스(fivetaku/insane-search 소스)에서 **자동 전이설치**. **Claude 전용**.
+- **insane-search**: **Claude** = 이 플러그인 `dependencies`로 선언 → 설치 시 마켓플레이스
+  (fivetaku/insane-search 소스)에서 **자동 전이설치**. **Codex/Grok** = `install.{ps1,sh} --upstream`이
+  engine을 git clone(v0.8.2 핀)·벤더링하고 런처(`run-engine`)+deps(curl_cffi 등) 깔고, Codex는
+  AGENTS.md에 호출 지시, Grok은 `~/.agents/skills/insane-search/` 스킬로. Python3 없으면 skip+경고.
