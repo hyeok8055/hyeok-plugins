@@ -13,18 +13,28 @@ hyeok8055의 Claude 플러그인 마켓플레이스. 두 플러그인 제공:
 
 ## 무엇을 하나
 
-세 도구를 **직교(orthogonal)** 계층으로 분리해 서로 겹치지 않게 한다:
+네 도구를 **직교(orthogonal)** 계층으로 분리해 서로 겹치지 않게 한다:
 
 | 계층 | 스킬 | 맡는 것 | 강도 |
 |------|------|---------|------|
 | 1 | **caveman** | 대화 **말투** (간결) — 항상 켜짐 | **ULTRA** (기본) |
 | 2 | **ponytail** | **실행·배포 코드** 양 (최소-단 부실 금지) | FULL (기본) |
 | 3 | **typst-korean** | Typst 한글 문서 생산 (**명시 요청 시만**) | 옵트인 |
+| 4 | **insane-search** | 웹·자료·리서치 **검색** (차단/소셜/JS 우회) | **강제** (Claude 전용) |
 
 **핵심 원칙: substance > style.** caveman은 말투만 바꾼다 — 코드 블록, 디스크에 쓰는 파일,
 커밋/PR 텍스트, 보안 분석, 사용자가 요청한 문서 내용, 다른 계층이 강제한 필수 질문은
 **절대 압축·생략 안 함**. ponytail은 실행 코드에만 적용되고 문서 내용은 못 깎는다.
-typst-korean은 코드를 건드리지 않는다. 전체 규칙: `plugins/hyeok-governance/GOVERNANCE.md`.
+typst-korean은 코드를 건드리지 않는다. **insane-search는 웹/자료/리서치 검색 요청 시 무조건
+사용(안 물어봄), Claude 전용.** 전체 규칙: `plugins/hyeok-governance/GOVERNANCE.md`.
+
+### insane-search 자동설치 (Claude)
+
+`hyeok-governance`가 `dependencies: ["insane-search"]`로 선언 + 이 마켓플레이스에 insane-search를
+외부 소스(`github:fivetaku/insane-search`)로 등록 → **hyeok-governance 설치 시 Claude Code가
+insane-search를 자동 전이설치**(내 마켓플레이스만 추가하면 됨, gptaku 마켓 별도 추가 불필요).
+API 키 불필요, 의존성 첫 사용 시 자동설치. **Claude Code 전용**(codex/grok 미지원 → 거기선
+호스트 기본 검색).
 
 ## 정직한 한계
 

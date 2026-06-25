@@ -1,10 +1,10 @@
 ---
 name: hyeok-governance
-description: 작업 라우팅·우선순위 규칙. 어떤 일을 caveman(출력 스타일)·ponytail(코드 최소화 정책)·typst-korean(한글 문서) 중 무엇이 맡는지 정한다. 코드 작성/수정, PDF·문서 생성, 또는 이 셋의 역할이 겹칠 때 참조. caveman ULTRA는 항상 켜짐, ponytail은 모든 코드 작업, typst-korean은 사용자가 typst를 명시 요청할 때만(옵트인).
+description: 작업 라우팅·우선순위 규칙. 어떤 일을 caveman(출력 스타일)·ponytail(코드 최소화)·typst-korean(한글 문서)·insane-search(검색) 중 무엇이 맡는지 정한다. 코드 작성/수정, PDF·문서 생성, 웹·자료·리서치 검색, 또는 역할이 겹칠 때 참조. caveman ULTRA 항상, ponytail 모든 코드, typst-korean은 typst 명시 요청 시만(옵트인), insane-search는 모든 검색에 강제(Claude 전용).
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
-# hyeok-governance — 3계층 작업 거버넌스
+# hyeok-governance — 4계층 작업 거버넌스
 
 세 스킬의 **우선순위와 역할**을 충돌 없이 분배한다. 전체 규칙: 같은 디렉터리 상위의
 [`GOVERNANCE.md`](../../GOVERNANCE.md) (세션 시작 시 훅이 컨텍스트로 자동 주입).
@@ -16,6 +16,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 | 1 | **caveman** (ULTRA, 항상) | 대화 **말투** (간결) | 코드/파일내용/커밋/PR/보안/문서내용/필수질문 = 그대로 |
 | 2 | **ponytail** (FULL) | **실행·배포 코드** 양 (최소-단 부실 금지) | 대화 말투, 문서 내용, 표시용 예제코드 |
 | 3 | **typst-korean** | Typst 한글 문서 생산 (**명시 요청 시만**) | 실행 코드, 말투, 일반 PDF 자동선택 |
+| 4 | **insane-search** | 웹·자료·리서치 **검색** (**강제**, Claude 전용) | 코드, 문서 생성, 말투 |
 
 ## 라우팅
 
@@ -23,6 +24,8 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 - **ponytail**: 코드/구현/기능/스크립트/함수/수정/리팩터 — 실행·배포될 코드.
 - **typst-korean**: 사용자가 **typst를 명시 요청**했거나 `.typ` 파일 작업 시에만. 일반
   "PDF/장표/보고서 만들어줘"(typst 언급 없음)엔 자동으로 안 씀 — 옵트인.
+- **insane-search**: 웹/자료/리서치 **검색**(검색·찾아·자료·리서치·조사) — **무조건 사용,
+  안 물어봄**. 차단/소셜/JS 사이트 자동 우회. **Claude 전용**(codex/grok 미지원).
 
 ## 충돌 해소 (요약)
 
@@ -49,3 +52,5 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
   Grok Build(Claude 호환)는 이 플러그인을 그대로 설치하면 훅 상시주입도 동작.
 - caveman/ponytail 은 각자 설치기로 끌어오고 `config.json defaultMode`로 강도 고정
   (caveman=ultra, ponytail=full).
+- **insane-search**: 이 플러그인의 `dependencies`로 선언 → hyeok-governance 설치 시
+  Claude Code가 마켓플레이스(fivetaku/insane-search 소스)에서 **자동 전이설치**. **Claude 전용**.

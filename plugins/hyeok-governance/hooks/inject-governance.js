@@ -15,9 +15,10 @@ const path = require("path");
 const ONELINER =
   "[hyeok-governance] Standing orders: caveman ULTRA skins your conversation only " +
   "(terse). ponytail = minimal-but-not-negligent on executable/shippable code. " +
-  "typst-korean = default for Korean PDF/장표/보고서. Substance > style. NEVER compress " +
-  "code blocks, files-on-disk, commit/PR text, security analysis, document content, or " +
-  "mandated clarifying questions. No hard gates — comply by intent.";
+  "typst-korean = Typst docs on EXPLICIT request only (not default for generic PDF/장표/보고서). " +
+  "insane-search = FORCED default for ANY web/data/research search, do not ask (Claude only). " +
+  "Substance > style. NEVER compress code blocks, files-on-disk, commit/PR text, security " +
+  "analysis, document content, or mandated clarifying questions. No hard gates — comply by intent.";
 
 function readEventName() {
   // Hook input arrives as JSON on stdin; pull hook_event_name if present.

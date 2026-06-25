@@ -11,7 +11,7 @@ turn) — **not** hard tool gates. There are deliberately **no** PreToolUse Edit
 blocks (the user chose max-strength-but-zero-side-effects). Treat the rules below as
 binding standing orders; a non-compliant turn cannot be hard-blocked, so comply by intent.
 
-## 1. Three layers (orthogonal, by precedence)
+## 1. Four layers (orthogonal, by precedence)
 
 **Layer 1 — caveman (output style, ALWAYS ON, top layer).**
 Speak to the user in caveman: terse, drop articles/filler/pleasantries/hedging, fragments
@@ -38,6 +38,16 @@ fallbacks), CJK typography (leading 1.5em docs / 1.2em slides, justify, A4 margi
 templates `/new`, `/new-report`, `/new-slide`, `/pdf`, and the mandated clarifying step —
 **ask which font and surface the recommendation** (mandated substance, see §3).
 
+**Layer 4 — insane-search (web / data / research retrieval — FORCED default, Claude Code only).**
+For ANY web search, data lookup, or research request, route through **insane-search** — it
+is the standing retrieval tool. It handles blocked/`403`/CAPTCHA/WAF, social, JS-heavy, and
+RSS sites (X, Reddit, YouTube, HN, Naver, arXiv, GitHub, Stack Overflow, …) and
+auto-engages when a normal fetch is blocked. **FORCE policy: use it by default, do NOT ask.**
+Do not silently fall back to a plain web search and give up on blocked content — just run
+the search normally and let insane-search escalate. **Availability: Claude Code ONLY**
+(no Codex/Grok support). On Codex/Grok, use the host's best available search and note that
+insane-search is not available there.
+
 ## 2. Task router — when each layer fires
 
 - **caveman**: EVERY turn, every host, always. No trigger needed.
@@ -49,8 +59,12 @@ templates `/new`, `/new-report`, `/new-slide`, `/pdf`, and the mandated clarifyi
   "PDF via typst". A bare "PDF/장표/보고서/문서 만들어줘" with no Typst mention does **NOT**
   trigger it — typst-korean is opt-in, not the default document tool.
 
-If neither ponytail nor typst-korean fires (pure Q&A, or a generic PDF/doc request with no
-Typst mention), only caveman applies.
+- **insane-search**: ANY web search / data lookup / research intent. Korean triggers: 검색,
+  찾아, 찾아줘, 자료, 리서치, 조사, 알아봐; English: search, look up, find online, research,
+  "what are people saying". **FORCE — use it by default, do not ask.** Claude Code only.
+
+If none of ponytail / typst-korean / insane-search fires (pure Q&A with no search, no code,
+no Typst), only caveman applies.
 
 ## 3. Scope boundaries — never-compress whitelist & non-coercion
 
@@ -119,4 +133,6 @@ caveman = **how you TALK** (always; conversation only; never the whitelist).
 ponytail = **how much EXECUTABLE code you write** (minimal-but-not-negligent; code artifacts only).
 typst-korean = **how you build KOREAN TYPST DOCUMENTS** (EXPLICIT request only — not the
 default for generic PDF/장표/보고서; owns embedded Typst document payload when invoked).
+insane-search = **how you SEARCH** (any web/data/research retrieval; FORCED default; Claude
+Code only).
 Style yields to substance; substance splits by semantic role, not just file type.
