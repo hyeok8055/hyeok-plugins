@@ -1,15 +1,16 @@
 #!/usr/bin/env sh
-# hyeok-plugins cross-host governance installer (macOS / Linux / WSL).
+# hyeok-plugins cross-host installer (macOS / Linux / WSL).
 #
-# Wires caveman + ponytail + typst-korean + insane-search governance into Claude Code, Codex
-# CLI, and Grok Build. Local writes only by default. Pass --upstream for opt-in network steps:
-# caveman's official installer AND vendoring the insane-search engine (git clone + pip) into
-# Codex/Grok so web/data/research search works there.
+# User-scope install for Claude Code, Codex CLI, and Grok Build:
+#   1) skill trees → ~/.claude|~/.codex|~/.grok|~/.agents/skills
+#   2) official CLI plugin marketplace + install when host CLI is present
+#   3) governance merge (Codex AGENTS.md), caveman/ponytail defaultMode pins
+#   4) optional --upstream: caveman remote installer + insane-search engine
 #
-# Guarantees: merge-safe (never clobbers AGENTS.md / config.json), idempotent (sentinel +
-# tag-marker), fail-open (absent host/tool = skip), NO global env exports.
+# Guarantees: merge-safe, idempotent, fail-open, NO global env exports.
 #
-# Usage: ./install.sh [--upstream] [--caveman-mode ultra] [--ponytail-mode full]
+# Usage: ./install.sh [--upstream] [--skip-cli-plugins]
+#                    [--caveman-mode ultra] [--ponytail-mode full]
 
 set -u
 
@@ -21,11 +22,14 @@ IHBEGIN='<!-- BEGIN hyeok-insane-search-host -->'
 IHEND='<!-- END hyeok-insane-search-host -->'
 IS_TAG='v0.8.2'
 IS_REPO='https://github.com/fivetaku/insane-search'
-CAVEMAN_MODE='ultra'; PONYTAIL_MODE='full'; UPSTREAM=0
+MARKER='.hyeok-installed'
+MARKET='hyeok-plugins'
+CAVEMAN_MODE='ultra'; PONYTAIL_MODE='full'; UPSTREAM=0; SKIP_CLI=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --upstream) UPSTREAM=1 ;;
+    --skip-cli-plugins) SKIP_CLI=1 ;;
     --caveman-mode) CAVEMAN_MODE="$2"; shift ;;
     --ponytail-mode) PONYTAIL_MODE="$2"; shift ;;
     *) echo "[hyeok] unknown arg: $1" ;;
@@ -35,7 +39,8 @@ done
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 GOV="$SCRIPT_DIR/plugins/hyeok-governance/GOVERNANCE.md"
-SKILL_SRC="$SCRIPT_DIR/plugins/typst-korean/skills/typst-korean/SKILL.md"
+TYPST_DIR="$SCRIPT_DIR/plugins/typst-korean/skills/typst-korean"
+DIAGRAM_DIR="$SCRIPT_DIR/plugins/diagram-design/skills/diagram-design"
 [ -f "$GOV" ] || { echo "[hyeok] ERROR: GOVERNANCE.md not found at $GOV — run from repo root."; exit 1; }
 
 info() { echo "[hyeok] $1"; }
@@ -56,6 +61,7 @@ try: o=json.load(open(p))
 except Exception: o={}
 o["defaultMode"]=m
 json.dump(o,open(p,"w"),indent=2)
+open(p,"a").write("\n")
 PY
   else
     if [ -f "$path" ]; then warn "no node/python to merge $tool config.json; left as-is"
@@ -63,8 +69,6 @@ PY
   fi
 }
 
-# merge_sentinel <path> <bodyfile> <begin> <end> : backup-once (only when NEITHER hyeok sentinel
-# present), strip THIS marker region, append fresh. Coexists with the other hyeok block.
 merge_sentinel() {
   path="$1"; bodyfile="$2"; b="$3"; e="$4"
   mkdir -p "$(dirname "$path")"
@@ -80,7 +84,82 @@ merge_sentinel() {
   info "governance merged -> $path"
 }
 
-# ---- insane-search helpers (fail-open) ----
+# Collect skill roots for this machine into $SKILL_ROOTS (newline-separated).
+collect_skill_roots() {
+  SKILL_ROOTS=""
+  add_root() {
+    r="$1"
+    case "$SKILL_ROOTS" in
+      *"$r"*) ;;
+      *) SKILL_ROOTS="${SKILL_ROOTS}${r}
+" ;;
+    esac
+  }
+  add_root "$HOME/.agents/skills"
+  [ "$has_claude" = 1 ] && add_root "$HOME/.claude/skills"
+  [ "$has_codex" = 1 ] && { add_root "$HOME/.codex/skills"; add_root "$HOME/.agents/skills"; }
+  [ "$has_grok" = 1 ] && { add_root "$HOME/.grok/skills"; add_root "$HOME/.agents/skills"; }
+  if [ -z "$(printf '%s' "$SKILL_ROOTS" | tr -d '[:space:]')" ]; then
+    add_root "$HOME/.agents/skills"
+  fi
+}
+
+# Install a skill directory tree into every skill root. Marks with .hyeok-installed.
+install_skill_tree() {
+  name="$1"; src="$2"; note="${3:-}"
+  [ -d "$src" ] || { warn "skill source missing: $src"; return 1; }
+  [ -f "$src/SKILL.md" ] || { warn "no SKILL.md in $src"; return 1; }
+  # Resolve to absolute path (src may be a temp dir)
+  src=$(CDPATH= cd -- "$src" && pwd)
+  collect_skill_roots
+  printf '%s' "$SKILL_ROOTS" | while IFS= read -r root; do
+    [ -n "$root" ] || continue
+    dest="$root/$name"
+    mkdir -p "$root"
+    if [ -d "$dest" ]; then
+      if [ -f "$dest/$MARKER" ] || [ ! -f "$dest/SKILL.md" ]; then
+        rm -rf "$dest"
+      else
+        if [ ! -e "$dest.pre-hyeok.bak" ]; then
+          mv "$dest" "$dest.pre-hyeok.bak" 2>/dev/null || { cp -R "$dest" "$dest.pre-hyeok.bak"; rm -rf "$dest"; }
+          warn "backed up existing skill $dest"
+        else
+          rm -rf "$dest"
+        fi
+      fi
+    fi
+    # Full-directory clone (portable): mkdir dest then tar stream contents
+    mkdir -p "$dest"
+    (cd "$src" && tar cf - .) | (cd "$dest" && tar xf -)
+    {
+      printf 'name=%s\nsource=%s\ninstalled=%s\n' "$name" "$src" "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)"
+      [ -n "$note" ] && printf 'note=%s\n' "$note"
+    } > "$dest/$MARKER"
+    [ -f "$dest/SKILL.md" ] || { warn "SKILL.md missing after copy into $dest"; continue; }
+    info "skill $name -> $dest"
+  done
+}
+
+install_governance_skill() {
+  tmp=$(mktemp -d)
+  {
+    cat <<'FM'
+---
+name: hyeok-governance
+description: >
+  Task routing/priority — caveman (chat style), ponytail (code policy),
+  typst-korean (Korean Typst docs, explicit only), insane-search (web/data/research),
+  diagram-design (editorial HTML+SVG diagrams). Code work, PDF/doc, diagrams, search, role overlap.
+---
+
+FM
+    cat "$GOV"
+  } > "$tmp/SKILL.md"
+  install_skill_tree hyeok-governance "$tmp" governance-inlined
+  rm -rf "$tmp"
+}
+
+# ---- insane-search helpers ----
 resolve_python() {
   for cand in python3 python; do
     command -v "$cand" >/dev/null 2>&1 || continue
@@ -128,15 +207,68 @@ write_launcher() {
   printf '%s' "$dir/run-engine.sh"
 }
 
-# provision_insane_search <dest> : sets globals LAUNCHER + DEPS_OK; returns 0 if usable.
 provision_insane_search() {
   dest="$1"
-  py=$(resolve_python) || { warn "no real Python 3 (python3/python); insane-search skipped on this host"; return 1; }
+  py=$(resolve_python) || { warn "no real Python 3; insane-search skipped"; return 1; }
   vendor_insane_search "$dest" "$IS_TAG" || return 1
   if install_engine_deps "$py"; then DEPS_OK=1; else DEPS_OK=0; fi
   LAUNCHER=$(write_launcher "$dest" "$py")
-  if ! "$LAUNCHER" --help >/dev/null 2>&1; then warn "engine smoke (--help) failed; not wiring insane-search here"; return 1; fi
+  if ! "$LAUNCHER" --help >/dev/null 2>&1; then warn "engine smoke failed"; return 1; fi
   return 0
+}
+
+install_cli_plugins() {
+  [ "$SKIP_CLI" = 1 ] && { info "CLI plugin install skipped (--skip-cli-plugins)"; return 0; }
+
+  if [ "$has_claude" = 1 ] && command -v claude >/dev/null 2>&1; then
+    if ! claude plugin marketplace add "$SCRIPT_DIR" --scope user >/dev/null 2>&1; then
+      claude plugin marketplace add hyeok8055/hyeok-plugins --scope user >/dev/null 2>&1 || true
+    fi
+    for p in hyeok-governance typst-korean diagram-design; do
+      if claude plugin install "${p}@${MARKET}" -s user >/dev/null 2>&1; then
+        info "Claude plugin installed: ${p}@${MARKET} (user)"
+      else
+        warn "Claude plugin install failed: ${p}@${MARKET} (skills still installed)"
+      fi
+    done
+  elif [ "$has_claude" = 1 ]; then
+    info "Claude dir present but claude CLI not on PATH — skills installed."
+  fi
+
+  if [ "$has_codex" = 1 ] && command -v codex >/dev/null 2>&1; then
+    if ! codex plugin marketplace add "$SCRIPT_DIR" --json >/dev/null 2>&1; then
+      codex plugin marketplace add hyeok8055/hyeok-plugins --json >/dev/null 2>&1 || true
+    fi
+    for p in hyeok-governance typst-korean diagram-design; do
+      if codex plugin add "${p}@${MARKET}" --json >/dev/null 2>&1; then
+        info "Codex plugin installed: ${p}@${MARKET}"
+      elif codex plugin add "$p" --marketplace "$MARKET" --json >/dev/null 2>&1; then
+        info "Codex plugin installed: ${p}@${MARKET}"
+      else
+        warn "Codex plugin add failed: ${p}@${MARKET} (skills still installed)"
+      fi
+    done
+  elif [ "$has_codex" = 1 ]; then
+    info "Codex dir present but codex CLI not on PATH — skills + AGENTS.md installed."
+  fi
+
+  if [ "$has_grok" = 1 ] && command -v grok >/dev/null 2>&1; then
+    if ! grok plugin marketplace add "$SCRIPT_DIR" >/dev/null 2>&1; then
+      grok plugin marketplace add hyeok8055/hyeok-plugins >/dev/null 2>&1 || true
+    fi
+    for rel in plugins/hyeok-governance plugins/typst-korean plugins/diagram-design; do
+      src="$SCRIPT_DIR/$rel"
+      if grok plugin install "$src" --trust >/dev/null 2>&1; then
+        info "Grok plugin installed: $src"
+      elif grok plugin install "hyeok8055/hyeok-plugins#${rel}" --trust >/dev/null 2>&1; then
+        info "Grok plugin installed: hyeok8055/hyeok-plugins#${rel}"
+      else
+        warn "Grok plugin install failed: $src (skills still installed)"
+      fi
+    done
+  elif [ "$has_grok" = 1 ]; then
+    info "Grok dir present but grok CLI not on PATH — skills installed."
+  fi
 }
 
 # ---- host detection ----
@@ -150,21 +282,25 @@ info "hosts -> claude:$has_claude codex:$has_codex grok:$has_grok"
 set_default_mode caveman  "$CAVEMAN_MODE"
 set_default_mode ponytail "$PONYTAIL_MODE"
 
-# ---- Claude Code ----
+# ---- user-global skill trees ----
+info "Installing user-global skill trees..."
+install_governance_skill
+[ -d "$TYPST_DIR" ] && install_skill_tree typst-korean "$TYPST_DIR" || warn "typst-korean skill missing"
+[ -d "$DIAGRAM_DIR" ] && install_skill_tree diagram-design "$DIAGRAM_DIR" "upstream:cathrynlavery/diagram-design" || warn "diagram-design skill missing"
+
+# ---- Claude ----
 if [ "$has_claude" = 1 ]; then
   mkdir -p "$HOME/.claude"; printf '%s' "$CAVEMAN_MODE" > "$HOME/.claude/.caveman-active"
   info "caveman flag -> $CAVEMAN_MODE"
   if command -v node >/dev/null 2>&1; then
     if printf '' | node "$SCRIPT_DIR/plugins/hyeok-governance/hooks/inject-governance.js" full 2>/dev/null | grep -q additionalContext; then info "Claude hook smoke test OK"; else warn "Claude hook produced no context (fail-open)"; fi
   else warn "node not on PATH — Claude governance hook no-ops until node available"; fi
-  info "Claude: governance + insane-search ship via the plugin (dependency auto-install)."
 fi
 
-# ---- Codex CLI ----
+# ---- Codex ----
 if [ "$has_codex" = 1 ]; then
   if [ -f "$HOME/.codex/AGENTS.override.md" ]; then codex_target="$HOME/.codex/AGENTS.override.md"; else codex_target="$HOME/.codex/AGENTS.md"; fi
   merge_sentinel "$codex_target" "$GOV" "$BEGIN" "$END"
-  info "Codex: governance merged into $codex_target."
   if [ "$UPSTREAM" = 1 ]; then
     isdir="$HOME/.codex/tools/insane-search"
     if provision_insane_search "$isdir"; then
@@ -195,28 +331,18 @@ Phase 3 (headless browser) is NOT available transparently; the engine exits 1 wi
 Phase 0-2 result, do not loop.
 EOF
       merge_sentinel "$codex_target" "$blk" "$IBEGIN" "$IEND"; rm -f "$blk"
-      if [ "$DEPS_OK" = 1 ]; then info "Codex: insane-search vendored ($isdir); phases 1-2 live."; else info "Codex: insane-search vendored; deps MISSING — phases 1-2 disabled."; fi
-    else info "Codex: insane-search not wired (see warning); governance still active."; fi
+      if [ "$DEPS_OK" = 1 ]; then info "Codex: insane-search vendored ($isdir); phases 1-2 live."; else info "Codex: insane-search vendored; deps MISSING."; fi
+    else info "Codex: insane-search not wired; governance still active."; fi
   else info "Codex: insane-search skipped (--upstream vendors the engine)."; fi
 fi
 
-# ---- Grok Build ----
+# ---- Grok insane-search ----
 if [ "$has_grok" = 1 ]; then
-  gov_skill="$HOME/.agents/skills/hyeok-governance/SKILL.md"; mkdir -p "$(dirname "$gov_skill")"
-  { printf -- '---\nname: hyeok-governance\ndescription: Task routing/priority - caveman/ponytail/typst-korean/insane-search. Code work, PDF/doc, web/data/research search, role overlap.\n---\n\n'; cat "$GOV"; } > "$gov_skill"
-  info "Grok: governance user skill -> $gov_skill"
-  if [ -f "$SKILL_SRC" ]; then
-    mkdir -p "$HOME/.agents/skills/typst-korean"
-    cp "$SKILL_SRC" "$HOME/.agents/skills/typst-korean/SKILL.md"
-    [ -f "$(dirname "$SKILL_SRC")/reference.md" ] && cp "$(dirname "$SKILL_SRC")/reference.md" "$HOME/.agents/skills/typst-korean/reference.md"
-    info "Grok: typst-korean skill copied."
-  fi
   if [ "$UPSTREAM" = 1 ]; then
     isskill="$HOME/.agents/skills/insane-search"; skillmd="$isskill/SKILL.md"
     if [ -f "$skillmd" ] && [ ! -f "$isskill/.hyeok-vendor" ] && [ ! -f "$skillmd.pre-hyeok.bak" ]; then cp "$skillmd" "$skillmd.pre-hyeok.bak"; warn "existing insane-search skill backed up"; fi
     if provision_insane_search "$isskill" && [ -f "$skillmd" ]; then
       tmp=$(mktemp)
-      # replace dead 'python3 -m engine' with the launcher; strip any old host-note region.
       sed "s#python3 -m engine#\"$LAUNCHER\"#g" "$skillmd" | awk -v b="$IHBEGIN" -v e="$IHEND" 'BEGIN{skip=0} $0==b{skip=1} skip==0{print} $0==e{skip=0}' > "$tmp"
       { cat <<EOF
 $IHBEGIN
@@ -232,13 +358,15 @@ $IHEND
 EOF
         cat "$tmp"; } > "$skillmd"
       rm -f "$tmp"
-      if [ "$DEPS_OK" = 1 ]; then info "Grok: insane-search vendored as user skill ($isskill); phases 1-2 live."; else info "Grok: insane-search vendored; deps MISSING — degraded."; fi
-    else info "Grok: insane-search not wired (see warning); governance still active."; fi
+      if [ "$DEPS_OK" = 1 ]; then info "Grok: insane-search vendored ($isskill); phases 1-2 live."; else info "Grok: insane-search vendored; deps MISSING."; fi
+    else info "Grok: insane-search not wired."; fi
   else info "Grok: insane-search skipped (--upstream vendors the engine)."; fi
-  info "      Grok Build is Claude-compatible: also install the hyeok-governance PLUGIN. Verify: grok inspect"
 fi
 
-# ---- optional upstream remote installer (opt-in) ----
+# ---- CLI plugins ----
+install_cli_plugins
+
+# ---- optional upstream ----
 if [ "$UPSTREAM" = 1 ]; then
   info "Running caveman official installer (remote exec)..."
   curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash || warn "caveman upstream installer failed"
@@ -249,10 +377,9 @@ fi
 
 echo ""
 info "=== DONE ==="
-info "Optional plugin commands:"
-echo "  caveman : curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"
-echo "  ponytail(Claude): /plugin marketplace add DietrichGebert/ponytail ; /plugin install ponytail@ponytail"
-echo "  hyeok(Claude):    /plugin marketplace add hyeok8055/hyeok-plugins ; /plugin install hyeok-governance@hyeok8055-hyeok-plugins"
-echo "                    (insane-search auto-installs on Claude as a plugin dependency)"
+info "Verify:"
+echo "  Claude: claude plugin list ; ls ~/.claude/skills"
+echo "  Codex:  codex plugin list  ; ls ~/.agents/skills ~/.codex/skills"
+echo "  Grok:   grok plugin list   ; ls ~/.grok/skills ~/.agents/skills"
 echo ""
 info "Undo anytime: ./uninstall.sh"

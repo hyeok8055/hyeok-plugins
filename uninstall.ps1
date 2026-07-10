@@ -1,8 +1,8 @@
 <#
 .SYNOPSIS
-  Reverse install.ps1: strip governance sentinel blocks, restore pre-install backups,
-  remove the caveman/ponytail defaultMode pin, delete the caveman flag + copied skill.
-  Idempotent and fail-open. Prints status of every location.
+  Reverse install.ps1: strip governance sentinels, restore backups, remove
+  defaultMode pins, remove hyeok-marked user skills, and attempt CLI plugin uninstall.
+  Idempotent and fail-open.
 #>
 [CmdletBinding()] param()
 $ErrorActionPreference = 'Continue'
@@ -10,7 +10,10 @@ $BEGIN = '<!-- BEGIN hyeok-gov -->'
 $END   = '<!-- END hyeok-gov -->'
 $IBEGIN = '<!-- BEGIN hyeok-insane-search -->'
 $IEND   = '<!-- END hyeok-insane-search -->'
+$MARKER = '.hyeok-installed'
 $Home_ = $env:USERPROFILE
+$MarketName = 'hyeok-plugins'
+$SkillNames = @('hyeok-governance','typst-korean','diagram-design')
 
 function Info($m) { Write-Host "[hyeok] $m" }
 function Write-NoBom($path, $text) {
@@ -35,14 +38,13 @@ function Restore-Or-Strip($path) {
   }
 }
 
-# Remove a vendored insane-search dir ONLY if our .hyeok-vendor marker is present (never a user dir).
 function Remove-Vendor($dir) {
   if ((Test-Path (Join-Path $dir '.hyeok-vendor'))) {
-    try { Remove-Item -Recurse -Force $dir; Info "removed vendored insane-search dir $dir" } catch { Info "could not remove $dir" }
+    try { Remove-Item -Recurse -Force $dir; Info "removed vendored dir $dir" } catch { Info "could not remove $dir" }
   } elseif (Test-Path (Join-Path $dir 'SKILL.md.pre-hyeok.bak')) {
     Copy-Item (Join-Path $dir 'SKILL.md.pre-hyeok.bak') (Join-Path $dir 'SKILL.md') -Force
     Remove-Item (Join-Path $dir 'SKILL.md.pre-hyeok.bak') -Force
-    Info "restored user-owned insane-search SKILL.md in $dir"
+    Info "restored user-owned SKILL.md in $dir"
   }
 }
 
@@ -56,16 +58,34 @@ function Remove-DefaultMode($tool) {
       if ($obj.PSObject.Properties.Name -contains 'defaultMode') {
         $obj.PSObject.Properties.Remove('defaultMode')
         Write-NoBom $path (($obj | ConvertTo-Json -Depth 20))
-        Info "${tool}: removed defaultMode pin (reverts to built-in default)"
+        Info "${tool}: removed defaultMode pin"
       }
     } catch { Info "${tool}: config.json unreadable, left as-is" }
   }
 }
 
-# Codex: governance may live in either the override or the base global file.
+function Remove-MarkedSkill($root, $name) {
+  $dest = Join-Path $root $name
+  $marker = Join-Path $dest $MARKER
+  $bak = "$dest.pre-hyeok.bak"
+  if (Test-Path $marker) {
+    try { Remove-Item -Recurse -Force $dest; Info "removed skill $dest" } catch { Info "could not remove $dest" }
+    if (Test-Path $bak) {
+      try { Move-Item $bak $dest -Force; Info "restored pre-hyeok skill $dest" } catch {}
+    }
+  } elseif (Test-Path $bak) {
+    # Installer moved foreign skill to bak but left our tree without marker somehow
+    try {
+      if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
+      Move-Item $bak $dest -Force
+      Info "restored pre-hyeok skill from $bak"
+    } catch {}
+  }
+}
+
+# Codex AGENTS
 Restore-Or-Strip (Join-Path $Home_ '.codex\AGENTS.override.md')
 Restore-Or-Strip (Join-Path $Home_ '.codex\AGENTS.md')
-# Legacy locations from earlier installs (harmless if absent).
 Restore-Or-Strip (Join-Path $Home_ '.grok\GROK.md')
 Restore-Or-Strip (Join-Path $Home_ 'AGENTS.override.md')
 Remove-DefaultMode 'caveman'
@@ -73,14 +93,35 @@ Remove-DefaultMode 'ponytail'
 
 $flag = Join-Path $Home_ '.claude\.caveman-active'
 if (Test-Path $flag) { Remove-Item $flag -Force; Info "removed caveman flag" }
-foreach ($s in @('.agents\skills\hyeok-governance\SKILL.md','.agents\skills\typst-korean\SKILL.md','.agents\skills\typst-korean\reference.md')) {
-  $p = Join-Path $Home_ $s
-  if (Test-Path $p) { Remove-Item $p -Force; Info "removed grok skill file $s" }
+
+# User skill trees (marker-guarded)
+$skillRoots = @(
+  (Join-Path $Home_ '.agents\skills'),
+  (Join-Path $Home_ '.claude\skills'),
+  (Join-Path $Home_ '.codex\skills'),
+  (Join-Path $Home_ '.grok\skills')
+) | Select-Object -Unique
+foreach ($root in $skillRoots) {
+  if (-not (Test-Path $root)) { continue }
+  foreach ($n in $SkillNames) { Remove-MarkedSkill $root $n }
 }
 
-# insane-search vendored engines (Codex tools dir + Grok skill dir) — marker-guarded.
+# insane-search vendors
 Remove-Vendor (Join-Path $Home_ '.codex\tools\insane-search')
 Remove-Vendor (Join-Path $Home_ '.agents\skills\insane-search')
 Info 'Note: pip packages (curl_cffi/bs4/pyyaml) are intentionally NOT uninstalled.'
 
-Info 'Uninstall complete. (Plugin itself: /plugin uninstall hyeok-governance@... ; caveman/ponytail keep their own uninstallers.)'
+# Best-effort CLI plugin uninstall
+foreach ($pair in @(
+  @('claude', { param($p) & claude plugin uninstall "${p}@${MarketName}" 2>$null }),
+  @('codex',  { param($p) & codex plugin remove "${p}@${MarketName}" 2>$null; & codex plugin remove $p --marketplace $MarketName 2>$null }),
+  @('grok',   { param($p) & grok plugin uninstall $p --confirm 2>$null })
+)) {
+  $cli = $pair[0]; $fn = $pair[1]
+  if (-not (Get-Command $cli -ErrorAction SilentlyContinue)) { continue }
+  foreach ($p in $SkillNames) {
+    try { & $fn $p | Out-Null; Info "$cli: attempted plugin uninstall $p" } catch {}
+  }
+}
+
+Info 'Uninstall complete. (caveman/ponytail keep their own uninstallers.)'

@@ -11,7 +11,7 @@ turn) — **not** hard tool gates. There are deliberately **no** PreToolUse Edit
 blocks (the user chose max-strength-but-zero-side-effects). Treat the rules below as
 binding standing orders; a non-compliant turn cannot be hard-blocked, so comply by intent.
 
-## 1. Four layers (orthogonal, by precedence)
+## 1. Five layers (orthogonal, by precedence)
 
 **Layer 1 — caveman (output style, ALWAYS ON, top layer).**
 Speak to the user in caveman: terse, drop articles/filler/pleasantries/hedging, fragments
@@ -65,6 +65,18 @@ stub) and installs `curl_cffi`, `beautifulsoup4`, `pyyaml`. **If the engine, a r
 deps are absent on this host, say so plainly and use the host's best available search — do not claim
 the engine ran.** On Claude this is handled by the bundled plugin and is always present.
 
+**Layer 5 — diagram-design (editorial HTML+SVG diagrams — DEFAULT for technical/product diagrams).**
+When the user asks for a **diagram** (architecture, flowchart, sequence, state machine, ER,
+timeline, swimlane, quadrant, nested, tree, org chart, layer stack, venn, pyramid/funnel), use
+**diagram-design** (canonical skill from [cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design),
+shipped via hyeok-plugins). Produce standalone HTML with inline SVG — editorial design system,
+no Mermaid-slop, no shadows, 4px grid. **Do not** invent a generic rounded-box SVG or dump
+Mermaid unless the user explicitly asks for Mermaid/ASCII. First-run: honor the skill's style-guide
+gate (onboard brand / paste tokens / proceed default). Full type specs live in the skill's
+`references/type-*.md` — load only the type you pick.
+Cross-host: user skill dirs `~/.claude/skills/diagram-design`, `~/.codex/skills/`,
+`~/.agents/skills/`, `~/.grok/skills/` (installer places all of them).
+
 ## 2. Task router — when each layer fires
 
 - **caveman**: EVERY turn, every host, always. No trigger needed.
@@ -81,9 +93,13 @@ the engine ran.** On Claude this is handled by the bundled plugin and is always 
   "what are people saying". **Use it by default, do not ask** — when available on this host
   (Claude: auto plugin; Grok: user skill; Codex: launcher via this instruction). If not
   vendored / no Python, say so and use the host's best search.
+- **diagram-design**: diagram / architecture / flowchart / sequence / state / ER / timeline /
+  swimlane / quadrant / org chart / venn / pyramid intent. Korean: 다이어그램, 아키텍처 그림,
+  순서도, 시퀀스, 상태도, ERD, 타임라인, 사분면, 조직도. **Default diagram tool** — not Mermaid
+  unless asked. Load the skill + matching `references/type-*.md`.
 
-If none of ponytail / typst-korean / insane-search fires (pure Q&A with no search, no code,
-no Typst), only caveman applies.
+If none of ponytail / typst-korean / insane-search / diagram-design fires (pure Q&A with no
+search, no code, no Typst, no diagram), only caveman applies.
 
 ## 3. Scope boundaries — never-compress whitelist & non-coercion
 
@@ -154,4 +170,6 @@ typst-korean = **how you build KOREAN TYPST DOCUMENTS** (EXPLICIT request only �
 default for generic PDF/장표/보고서; owns embedded Typst document payload when invoked).
 insane-search = **how you SEARCH** (any web/data/research retrieval; default tool; cross-host —
 auto on Claude/Grok, instruction-driven on Codex; conditional on Python+engine being present).
+diagram-design = **how you DRAW technical/product diagrams** (editorial HTML+SVG; default for
+diagram intent; not Mermaid-slop; canonical skill from cathrynlavery/diagram-design).
 Style yields to substance; substance splits by semantic role, not just file type.

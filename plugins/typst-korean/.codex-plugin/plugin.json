@@ -1,0 +1,34 @@
+{
+  "name": "typst-korean",
+  "version": "1.1.0",
+  "description": "Typst Korean document support — fonts, CJK typography, report/slide templates.",
+  "author": {
+    "name": "hyeok8055",
+    "url": "https://github.com/hyeok8055"
+  },
+  "homepage": "https://github.com/hyeok8055/hyeok-plugins",
+  "repository": "https://github.com/hyeok8055/hyeok-plugins",
+  "license": "MIT",
+  "keywords": [
+    "typst",
+    "korean",
+    "hangul",
+    "pretendard",
+    "typography",
+    "slide"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "typst-korean",
+    "shortDescription": "Korean Typst docs, fonts, templates",
+    "longDescription": "Typst Hangul document support with Pretendard defaults, report/slide templates, and font install helpers.",
+    "developerName": "hyeok8055",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/hyeok8055/hyeok-plugins",
+    "defaultPrompt": [
+      "Create a Korean Typst report with Pretendard."
+    ],
+    "brandColor": "#2563eb"
+  }
+}

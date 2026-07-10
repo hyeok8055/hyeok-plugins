@@ -1,0 +1,37 @@
+{
+  "name": "hyeok-governance",
+  "version": "1.2.0",
+  "description": "Cross-host agent governance: caveman + ponytail + typst-korean + insane-search + diagram-design routing.",
+  "author": {
+    "name": "hyeok8055",
+    "url": "https://github.com/hyeok8055"
+  },
+  "homepage": "https://github.com/hyeok8055/hyeok-plugins",
+  "repository": "https://github.com/hyeok8055/hyeok-plugins",
+  "license": "MIT",
+  "keywords": [
+    "governance",
+    "caveman",
+    "ponytail",
+    "typst-korean",
+    "insane-search",
+    "diagram-design",
+    "policy",
+    "cross-host"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "hyeok-governance",
+    "shortDescription": "Cross-host task routing and priority rules",
+    "longDescription": "Orthogonal layers: caveman (style), ponytail (code size), typst-korean (Korean Typst docs), insane-search (web/data), diagram-design (editorial diagrams).",
+    "developerName": "hyeok8055",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/hyeok8055/hyeok-plugins",
+    "defaultPrompt": [
+      "Follow hyeok-governance standing orders for this session."
+    ],
+    "brandColor": "#1c1917"
+  }
+}

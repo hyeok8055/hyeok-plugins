@@ -4,8 +4,8 @@
     "name": "hyeok8055"
   },
   "metadata": {
-    "description": "hyeok8055의 커스텀 Claude 플러그인 마켓플레이스 - 한글 문서(typst) + 크로스호스트 거버넌스(caveman/ponytail/typst/insane-search)",
-    "version": "2.1.0"
+    "description": "hyeok8055 커스텀 플러그인 마켓플레이스 — typst-korean, hyeok-governance, diagram-design(정본), insane-search. Claude Code / Codex CLI / Grok Build 크로스호스트.",
+    "version": "2.2.0"
   },
   "plugins": [
     {
@@ -17,12 +17,17 @@
       "source": "./plugins/hyeok-governance"
     },
     {
+      "name": "diagram-design",
+      "source": "./plugins/diagram-design",
+      "description": "Editorial diagrams (HTML+SVG). Canonical skill from cathrynlavery/diagram-design, vendored as 정본."
+    },
+    {
       "name": "insane-search",
       "source": {
         "source": "github",
         "repo": "fivetaku/insane-search"
       },
-      "description": "차단(403/CAPTCHA/WAF)·소셜·JS 사이트 우회 검색/페치. hyeok-governance가 dependency로 자동설치. (출처: fivetaku/insane-search, Claude 전용)"
+      "description": "차단(403/CAPTCHA/WAF)·소셜·JS 사이트 우회 검색/페치. hyeok-governance가 dependency로 자동설치. (출처: fivetaku/insane-search)"
     }
   ]
 }

@@ -1,0 +1,44 @@
+{
+  "name": "hyeok-plugins",
+  "interface": {
+    "displayName": "hyeok-plugins"
+  },
+  "plugins": [
+    {
+      "name": "hyeok-governance",
+      "source": {
+        "source": "local",
+        "path": "./plugins/hyeok-governance"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "typst-korean",
+      "source": {
+        "source": "local",
+        "path": "./plugins/typst-korean"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "diagram-design",
+      "source": {
+        "source": "local",
+        "path": "./plugins/diagram-design"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
