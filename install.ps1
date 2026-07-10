@@ -326,8 +326,20 @@ function Install-CliPlugins {
     Info 'Claude dir present but `claude` CLI not on PATH — skills installed; run plugin install manually if needed.'
   }
 
-  # Codex CLI: marketplace + plugin add
+  # Codex CLI: marketplace + plugin add + enable in config.toml
   if ($script:hasCodex -and (Get-Command codex -ErrorAction SilentlyContinue)) {
+    # Heal personal marketplace BOM (Codex JSON parser rejects UTF-8 BOM at col 1)
+    $personalMp = Join-Path $Home_ '.agents\plugins\marketplace.json'
+    if (Test-Path $personalMp) {
+      try {
+        $bytes = [System.IO.File]::ReadAllBytes($personalMp)
+        if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+          $text = [System.Text.Encoding]::UTF8.GetString($bytes, 3, $bytes.Length - 3)
+          Write-NoBom $personalMp $text
+          Info 'Codex: stripped UTF-8 BOM from ~/.agents/plugins/marketplace.json'
+        }
+      } catch { Warn "Codex: could not heal personal marketplace.json: $($_.Exception.Message)" }
+    }
     try {
       & codex plugin marketplace add $root --json 2>&1 | Out-Null
       if ($LASTEXITCODE -ne 0) {
@@ -335,16 +347,37 @@ function Install-CliPlugins {
       }
       foreach ($p in @('hyeok-governance','typst-korean','diagram-design')) {
         $id = "${p}@${MarketName}"
+        $added = $false
         try {
           & codex plugin add $id --json 2>&1 | Out-Null
-          if ($LASTEXITCODE -eq 0) { Info "Codex plugin installed: $id" }
+          if ($LASTEXITCODE -eq 0) { $added = $true; Info "Codex plugin installed: $id" }
           else {
-            # Alternate marketplace name (flattened from path/url)
             & codex plugin add $p --marketplace $MarketName --json 2>&1 | Out-Null
-            if ($LASTEXITCODE -eq 0) { Info "Codex plugin installed: $p@$MarketName" }
+            if ($LASTEXITCODE -eq 0) { $added = $true; Info "Codex plugin installed: $p@$MarketName" }
             else { Warn "Codex plugin add failed: $id (skills still installed)" }
           }
         } catch { Warn "Codex plugin add errored: $id" }
+        if ($added) {
+          # Ensure enabled = true in ~/.codex/config.toml
+          $cfgPath = Join-Path $Home_ '.codex\config.toml'
+          try {
+            $cfg = if (Test-Path $cfgPath) { Get-Content -Raw -Encoding UTF8 $cfgPath } else { '' }
+            if ($null -eq $cfg) { $cfg = '' }
+            $section = "[plugins.`"$id`"]"
+            if ($cfg -notmatch [regex]::Escape($section)) {
+              $cfg = $cfg.TrimEnd() + "`n`n$section`nenabled = true`n"
+              Write-NoBom $cfgPath $cfg
+              Info "Codex: enabled $id in config.toml"
+            } elseif ($cfg -notmatch ([regex]::Escape($section) + '[\s\S]*?enabled\s*=')) {
+              # section exists but no enabled line nearby — append enable block anyway if disabled
+              if ($cfg -match ([regex]::Escape($section) + '\s*\r?\nenabled\s*=\s*false')) {
+                $cfg = [regex]::Replace($cfg, ([regex]::Escape($section) + '\s*\r?\nenabled\s*=\s*false'), "$section`nenabled = true")
+                Write-NoBom $cfgPath $cfg
+                Info "Codex: flipped $id enabled=true"
+              }
+            }
+          } catch { Warn "Codex: could not enable $id in config.toml" }
+        }
       }
     } catch { Warn "Codex marketplace/plugin CLI failed: $($_.Exception.Message)" }
   } elseif ($script:hasCodex) {
