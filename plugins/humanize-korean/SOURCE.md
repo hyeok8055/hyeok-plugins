@@ -9,3 +9,5 @@ Skill roots: `skills/humanize-korean`, `skills/humanize`, `skills/humanize-redo`
 Scripts: `scripts/` (shim · gates). Runtime agents: `agents/` (4).
 
 Treat upstream as 정본. Refresh by re-copying from a fresh clone and updating the pin.
+
+Note: `skills/humanize-redo` is rewritten for v2.3 and **not** auto-installed by hyeok `install.sh` (use humanize-korean re-run / heavy). Legacy uninstall still removes it if present.

@@ -230,7 +230,7 @@ install_governance_skill
 [ -d "$ARCHIFY_DIR" ] && install_skill_tree archify "$ARCHIFY_DIR" "upstream:tt-a1i/archify" || warn "archify skill missing"
 [ -d "$HUMANIZE_DIR" ] && install_skill_tree humanize-korean "$HUMANIZE_DIR" "upstream:epoko77-ai/im-not-ai" || warn "humanize-korean skill missing"
 [ -d "$HUMANIZE_LIGHT_DIR" ] && install_skill_tree humanize "$HUMANIZE_LIGHT_DIR" "upstream:epoko77-ai/im-not-ai" || true
-[ -d "$HUMANIZE_REDO_DIR" ] && install_skill_tree humanize-redo "$HUMANIZE_REDO_DIR" "upstream:epoko77-ai/im-not-ai" || true
+# humanize-redo: vendored but not auto-installed (wrapper only; prefer humanize-korean re-run)
 
 # ---- Claude ----
 if [ "$has_claude" = 1 ]; then

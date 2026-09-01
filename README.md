@@ -4,7 +4,7 @@ hyeok8055의 크로스호스트 에이전트 플러그인 마켓플레이스.
 
 | 플러그인 | 역할 |
 |----------|------|
-| **hyeok-governance** | ponytail · typst-korean · diagram-design · archify **우선순위·역할 분배** |
+| **hyeok-governance** | ponytail · typst-korean · diagram-design · archify · humanize-korean **우선순위·역할 분배** |
 | **typst-korean** | Typst 한글 문서(PDF·장표·보고서) |
 | **diagram-design** | Editorial HTML+SVG 다이어그램 — 정본 [cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design) |
 | **archify** | 인터랙티브 시스템 맵 — 정본 [tt-a1i/archify](https://github.com/tt-a1i/archify) |

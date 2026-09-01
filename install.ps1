@@ -358,7 +358,7 @@ else { Warn "archify skill missing at $ArchifySkillDir" }
 if (Test-Path $HumanizeSkillDir) { Install-SkillTree 'humanize-korean' $HumanizeSkillDir 'upstream:epoko77-ai/im-not-ai' }
 else { Warn "humanize-korean skill missing at $HumanizeSkillDir" }
 if (Test-Path $HumanizeLightDir) { Install-SkillTree 'humanize' $HumanizeLightDir 'upstream:epoko77-ai/im-not-ai' }
-if (Test-Path $HumanizeRedoDir) { Install-SkillTree 'humanize-redo' $HumanizeRedoDir 'upstream:epoko77-ai/im-not-ai' }
+# humanize-redo vendored but not auto-installed
 
 # ---- Claude flag + hook smoke ----
 if ($script:hasClaude) {
