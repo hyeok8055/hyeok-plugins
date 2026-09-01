@@ -6,8 +6,6 @@
 set -u
 BEGIN='<!-- BEGIN hyeok-gov -->'
 END='<!-- END hyeok-gov -->'
-IBEGIN='<!-- BEGIN hyeok-insane-search -->'
-IEND='<!-- END hyeok-insane-search -->'
 MARKER='.hyeok-installed'
 MARKET='hyeok-plugins'
 info() { echo "[hyeok] $1"; }
@@ -79,10 +77,8 @@ restore_or_strip "$HOME/.codex/AGENTS.override.md"
 restore_or_strip "$HOME/.codex/AGENTS.md"
 restore_or_strip "$HOME/.grok/GROK.md"
 restore_or_strip "$HOME/AGENTS.override.md"
-remove_default_mode caveman
 remove_default_mode ponytail
 
-[ -f "$HOME/.claude/.caveman-active" ] && { rm -f "$HOME/.claude/.caveman-active"; info "removed caveman flag"; }
 
 for root in "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.grok/skills"; do
   [ -d "$root" ] || continue
@@ -114,4 +110,4 @@ if command -v grok >/dev/null 2>&1; then
   done
 fi
 
-info "Uninstall complete. (caveman/ponytail keep their own uninstallers.)"
+info "Uninstall complete."

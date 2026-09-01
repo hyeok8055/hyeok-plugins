@@ -3,7 +3,7 @@
 This plugin packages the **canonical** skill from:
 
 - **Upstream:** https://github.com/cathrynlavery/diagram-design
-- **Pinned commit at vendoring:** `0ab077f2291e9056554d48a90c4ff45f0b7029a5`
+- **Pinned commit at vendoring:** `b52a33bfeef85d43995193ee52c13b485154b7b4`
 - **License:** MIT (see `LICENSE`)
 
 Skill root: `skills/diagram-design/` (`SKILL.md` + `references/` + `assets/`).

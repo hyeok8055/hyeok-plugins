@@ -13,15 +13,12 @@ const fs = require("fs");
 const path = require("path");
 
 const ONELINER =
-  "[hyeok-governance] Standing orders: caveman ULTRA skins your conversation only " +
-  "(terse). ponytail = minimal-but-not-negligent on executable/shippable code. " +
+  "[hyeok-governance] Standing orders: ponytail = minimal-but-not-negligent on executable/shippable code. " +
   "typst-korean = Typst docs on EXPLICIT request only (not default for generic PDF/장표/보고서). " +
-  "insane-search = default tool for ANY web/data/research search, do not ask; cross-host " +
-  "(auto on Claude/Grok, launcher+instruction on Codex) when present, else say so & use host search. " +
-  "diagram-design = default for architecture/flowchart/sequence/… diagrams (editorial HTML+SVG; " +
-  "not Mermaid unless asked). Substance > style. NEVER compress code blocks, files-on-disk, " +
-  "commit/PR text, security analysis, document content, or mandated clarifying questions. " +
-  "No hard gates — comply by intent.";
+  "diagram-design = editorial HTML+SVG diagrams. " +
+  "archify = default for interactive system/architecture maps (validated HTML/SVG IR; not Mermaid unless asked). " +
+  "Substance > style. NEVER compress code blocks, files-on-disk, commit/PR text, security analysis, " +
+  "document content, or mandated clarifying questions. No hard gates — comply by intent.";
 
 function readEventName() {
   // Hook input arrives as JSON on stdin; pull hook_event_name if present.
