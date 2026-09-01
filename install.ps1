@@ -18,6 +18,7 @@
 [CmdletBinding()]
 param(
   [switch]$SkipCliPlugins,
+  [switch]$SkipFonts,
   [ValidateSet('off','lite','full','ultra','wenyan-lite','wenyan','wenyan-full','wenyan-ultra')]
   [ValidateSet('off','lite','full','ultra')]
   [string]$PonytailMode = 'full'
@@ -370,6 +371,16 @@ if ($script:hasCodex) {
   Merge-Sentinel $codexTarget $Gov $BEGIN $END
   Info "Codex: governance merged into $codexTarget"
 
+}
+
+
+# ---- Pretendard fonts ----
+if ($SkipFonts) { Info 'Pretendard font install skipped (-SkipFonts)' }
+else {
+  $fontScript = Join-Path $PSScriptRoot 'scripts\install-pretendard.ps1'
+  if (Test-Path $fontScript) {
+    try { & $fontScript } catch { Warn "Pretendard font install failed: $_" }
+  } else { Warn 'scripts/install-pretendard.ps1 missing' }
 }
 
 # ---- CLI plugin install (user scope) ----

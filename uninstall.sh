@@ -8,6 +8,7 @@ BEGIN='<!-- BEGIN hyeok-gov -->'
 END='<!-- END hyeok-gov -->'
 MARKER='.hyeok-installed'
 MARKET='hyeok-plugins'
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 info() { echo "[hyeok] $1"; }
 
 restore_or_strip() {
@@ -109,5 +110,23 @@ if command -v grok >/dev/null 2>&1; then
     grok plugin uninstall "$p" --confirm >/dev/null 2>&1 && info "Grok: uninstalled $p" || true
   done
 fi
+
+
+# Pretendard fonts installed by hyeok
+remove_pretendard_fonts() {
+  case "$(uname -s 2>/dev/null)" in
+    Darwin) dest="$HOME/Library/Fonts" ;;
+    *) dest="$HOME/.local/share/fonts/hyeok-pretendard" ;;
+  esac
+  for w in Regular Medium SemiBold Bold; do
+    f="$dest/Pretendard-${w}.otf"
+    [ -f "$f" ] && rm -f "$f" && info "removed $f"
+  done
+  rm -rf "$HOME/.hyeok/fonts/pretendard" 2>/dev/null || true
+  rm -f "$SCRIPT_DIR/plugins/typst-korean/fonts/"Pretendard-*.otf 2>/dev/null || true
+  rm -f "$SCRIPT_DIR/plugins/typst-korean/fonts/.hyeok-installed" 2>/dev/null || true
+}
+
+remove_pretendard_fonts
 
 info "Uninstall complete."

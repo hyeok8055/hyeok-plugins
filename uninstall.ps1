@@ -117,3 +117,19 @@ foreach ($pair in @(
 }
 
 Info 'Uninstall complete.'
+
+
+# Pretendard fonts
+$fontDest = Join-Path $Home_ 'AppData\Local\Microsoft\Windows\Fonts'
+$reg = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
+foreach ($w in @('Regular','Medium','SemiBold','Bold')) {
+  $f = "Pretendard-$w.otf"
+  $path = Join-Path $fontDest $f
+  if (Test-Path $path) { Remove-Item $path -Force; Info "removed $path" }
+  $name = "Pretendard $w (TrueType)"
+  if (Get-ItemProperty -Path $reg -Name $name -ErrorAction SilentlyContinue) {
+    Remove-ItemProperty -Path $reg -Name $name -ErrorAction SilentlyContinue
+  }
+}
+$cache = Join-Path $Home_ '.hyeok\fonts\pretendard'
+if (Test-Path $cache) { Remove-Item -Recurse -Force $cache; Info "removed $cache" }

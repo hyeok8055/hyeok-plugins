@@ -21,6 +21,7 @@ Claude Code · Codex CLI · Grok Build **user 단위 전역 설치**를 `install
 # macOS / Linux / WSL
 ./install.sh
 ./install.sh --skip-cli-plugins  # 스킬 트리만
+./install.sh --skip-fonts         # Pretendard 자동설치 생략
 
 # Windows PowerShell
 ./install.ps1
@@ -39,7 +40,10 @@ Claude Code · Codex CLI · Grok Build **user 단위 전역 설치**를 `install
    - `claude plugin marketplace add <repo> --scope user` + `plugin install …@hyeok-plugins -s user`
    - `codex plugin marketplace add <repo>` + `plugin add …@hyeok-plugins`
    - `grok plugin marketplace add <repo>` + `plugin install <local-plugin> --trust`
-3. **거버넌스 핀**
+3. **Pretendard 폰트** (typst-korean 기본)
+   - Regular·Medium·SemiBold·Bold OTF 4개만 CDN에서 받아 OS 사용자 폰트 경로에 설치 (~6MB)
+   - macOS `~/Library/Fonts`, Linux `~/.local/share/fonts/hyeok-pretendard`, Windows 사용자 Fonts
+4. **거버넌스 핀**
    - ponytail `defaultMode=full` (config.json, BOM 없음)
    - Codex: `AGENTS.override.md` 또는 `AGENTS.md`에 sentinel 병합
 
