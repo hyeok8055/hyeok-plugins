@@ -8,7 +8,7 @@
 #
 # Guarantees: merge-safe, idempotent, fail-open, NO global env exports.
 #
-# Usage: ./install.sh [--skip-cli-plugins] [--ponytail-mode full]
+# Usage: ./install.sh [--skip-cli-plugins] [--skip-fonts] [--ponytail-mode full]
 
 set -u
 
@@ -16,11 +16,12 @@ BEGIN='<!-- BEGIN hyeok-gov -->'
 END='<!-- END hyeok-gov -->'
 MARKER='.hyeok-installed'
 MARKET='hyeok-plugins'
-PONYTAIL_MODE='full'; SKIP_CLI=0
+PONYTAIL_MODE='full'; SKIP_CLI=0; SKIP_FONTS=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --skip-cli-plugins) SKIP_CLI=1 ;;
+    --skip-fonts) SKIP_FONTS=1 ;;
     --ponytail-mode) PONYTAIL_MODE="$2"; shift ;;
     --upstream|--caveman-mode)
       echo "[hyeok] WARN: $1 removed (caveman/insane-search no longer shipped); ignoring"
@@ -235,6 +236,18 @@ fi
 if [ "$has_codex" = 1 ]; then
   if [ -f "$HOME/.codex/AGENTS.override.md" ]; then codex_target="$HOME/.codex/AGENTS.override.md"; else codex_target="$HOME/.codex/AGENTS.md"; fi
   merge_sentinel "$codex_target" "$GOV" "$BEGIN" "$END"
+fi
+
+
+# ---- Pretendard fonts (typst-korean default) ----
+if [ "$SKIP_FONTS" = 1 ]; then
+  info "Pretendard font install skipped (--skip-fonts)"
+else
+  if [ -f "$SCRIPT_DIR/scripts/install-pretendard.sh" ]; then
+    sh "$SCRIPT_DIR/scripts/install-pretendard.sh" || warn "Pretendard font install failed (Typst can still use --font-path later)"
+  else
+    warn "scripts/install-pretendard.sh missing"
+  fi
 fi
 
 # ---- CLI plugins ----

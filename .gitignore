@@ -1,0 +1,4 @@
+
+# Pretendard binaries (downloaded by install-pretendard)
+plugins/typst-korean/fonts/*.otf
+plugins/typst-korean/fonts/.hyeok-installed

@@ -6,6 +6,21 @@ description: 한글 폰트를 다운로드하고 설치합니다 (기본값: 프
 
 한글 폰트를 다운로드하고 Typst에서 사용할 수 있도록 설정합니다.
 
+
+## 기본 설치 (권장)
+
+hyeok-plugins `./install.sh` / `./install.ps1` 이 Pretendard **Regular·Medium·SemiBold·Bold** OTF 4개만
+자동으로 받아 OS 사용자 폰트 경로에 넣는다 (`scripts/install-pretendard.*`).
+
+```bash
+./scripts/install-pretendard.sh          # macOS / Linux / WSL
+./scripts/install-pretendard.ps1        # Windows
+./install.sh --skip-fonts               # 폰트만 생략
+```
+
+용량: 전체 zip(~46MB) 대신 파일 4개(~6MB). 출처 orioncactus/pretendard v1.3.9 (jsDelivr).
+
+---
 ## 폰트 선택
 
 `$ARGUMENTS`가 없거나 폰트명이 지정되지 않으면, 사용자에게 다음 중 선택하도록 물어보세요:
