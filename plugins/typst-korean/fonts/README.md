@@ -18,3 +18,5 @@ typst compile --font-path ./plugins/typst-korean/fonts doc.typ
 ```
 
 `*.otf`는 용량 때문에 git에 넣지 않는다 (`.gitignore`).
+
+Uninstall only removes Pretendard from shared OS font dirs when `.hyeok-installed` is present (written by install-pretendard).

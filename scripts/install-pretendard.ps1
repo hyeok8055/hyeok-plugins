@@ -61,6 +61,9 @@ foreach ($w in $Weights) {
   }
   $copied++
 }
+if ($copied -gt 0) {
+  Set-Content -Path (Join-Path $Dest $Marker) -Value $Ver -NoNewline
+}
 
 # repo-local fonts for --font-path
 $repoFonts = Join-Path $PSScriptRoot '..\plugins\typst-korean\fonts'

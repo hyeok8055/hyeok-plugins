@@ -115,13 +115,26 @@ fi
 # Pretendard fonts installed by hyeok
 remove_pretendard_fonts() {
   case "$(uname -s 2>/dev/null)" in
-    Darwin) dest="$HOME/Library/Fonts" ;;
-    *) dest="$HOME/.local/share/fonts/hyeok-pretendard" ;;
+    Darwin) dest="$HOME/Library/Fonts"; shared=1 ;;
+    *) dest="$HOME/.local/share/fonts/hyeok-pretendard"; shared=0 ;;
   esac
-  for w in Regular Medium SemiBold Bold; do
-    f="$dest/Pretendard-${w}.otf"
-    [ -f "$f" ] && rm -f "$f" && info "removed $f"
-  done
+  marker="$dest/.hyeok-installed"
+  # shared Fonts (macOS): only delete if hyeok marker present — never clobber user-installed Pretendard
+  if [ "$shared" = 1 ]; then
+    if [ -f "$marker" ]; then
+      for w in Regular Medium SemiBold Bold; do
+        f="$dest/Pretendard-${w}.otf"
+        [ -f "$f" ] && rm -f "$f" && info "removed $f"
+      done
+      rm -f "$marker"
+    else
+      info "skip shared Fonts Pretendard (no .hyeok-installed marker)"
+    fi
+  else
+    if [ -d "$dest" ]; then
+      rm -rf "$dest" && info "removed $dest"
+    fi
+  fi
   rm -rf "$HOME/.hyeok/fonts/pretendard" 2>/dev/null || true
   rm -f "$SCRIPT_DIR/plugins/typst-korean/fonts/"Pretendard-*.otf 2>/dev/null || true
   rm -f "$SCRIPT_DIR/plugins/typst-korean/fonts/.hyeok-installed" 2>/dev/null || true

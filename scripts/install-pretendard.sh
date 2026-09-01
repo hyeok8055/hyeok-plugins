@@ -56,6 +56,10 @@ for w in $WEIGHTS; do
   cp -f "$CACHE/$f" "$DEST/$f"
   copied=$((copied + 1))
 done
+# marker in DEST so uninstall only removes hyeok-owned copies (esp. shared ~/Library/Fonts)
+if [ "$copied" -gt 0 ]; then
+  printf '%s\n' "$VER" > "$DEST/$MARKER"
+fi
 
 # optional repo-local fonts for --font-path (when run from repo)
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)

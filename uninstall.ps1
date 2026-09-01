@@ -116,20 +116,26 @@ foreach ($pair in @(
   }
 }
 
-Info 'Uninstall complete.'
 
-
-# Pretendard fonts
+# Pretendard fonts (only if hyeok marker — do not remove user-installed Pretendard)
 $fontDest = Join-Path $Home_ 'AppData\Local\Microsoft\Windows\Fonts'
+$fontMarker = Join-Path $fontDest '.hyeok-installed'
 $reg = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
-foreach ($w in @('Regular','Medium','SemiBold','Bold')) {
-  $f = "Pretendard-$w.otf"
-  $path = Join-Path $fontDest $f
-  if (Test-Path $path) { Remove-Item $path -Force; Info "removed $path" }
-  $name = "Pretendard $w (TrueType)"
-  if (Get-ItemProperty -Path $reg -Name $name -ErrorAction SilentlyContinue) {
-    Remove-ItemProperty -Path $reg -Name $name -ErrorAction SilentlyContinue
+if (Test-Path $fontMarker) {
+  foreach ($w in @('Regular','Medium','SemiBold','Bold')) {
+    $f = "Pretendard-$w.otf"
+    $path = Join-Path $fontDest $f
+    if (Test-Path $path) { Remove-Item $path -Force; Info "removed $path" }
+    $name = "Pretendard $w (TrueType)"
+    if (Get-ItemProperty -Path $reg -Name $name -ErrorAction SilentlyContinue) {
+      Remove-ItemProperty -Path $reg -Name $name -ErrorAction SilentlyContinue
+    }
   }
+  Remove-Item $fontMarker -Force -ErrorAction SilentlyContinue
+} else {
+  Info 'skip Windows Fonts Pretendard (no .hyeok-installed marker)'
 }
 $cache = Join-Path $Home_ '.hyeok\fonts\pretendard'
 if (Test-Path $cache) { Remove-Item -Recurse -Force $cache; Info "removed $cache" }
+
+Info 'Uninstall complete.'
