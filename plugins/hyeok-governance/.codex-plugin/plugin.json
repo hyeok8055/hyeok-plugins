@@ -6,9 +6,9 @@
     "name": "hyeok8055",
     "url": "https://github.com/hyeok8055"
   },
-  "license": "MIT",
   "homepage": "https://github.com/hyeok8055/hyeok-plugins",
   "repository": "https://github.com/hyeok8055/hyeok-plugins",
+  "license": "MIT",
   "keywords": [
     "governance",
     "ponytail",
@@ -18,5 +18,23 @@
     "hooks",
     "policy",
     "cross-host"
-  ]
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "hyeok-governance",
+    "shortDescription": "Cross-host task routing and priority rules",
+    "longDescription": "Orthogonal layers: ponytail (code size), typst-korean (Korean Typst docs), diagram-design (editorial diagrams), archify (interactive system maps).",
+    "developerName": "hyeok8055",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/hyeok8055/hyeok-plugins",
+    "defaultPrompt": [
+      "Follow hyeok-governance standing orders for this session."
+    ],
+    "brandColor": "#1c1917"
+  }
 }

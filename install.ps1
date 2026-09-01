@@ -370,27 +370,6 @@ if ($script:hasCodex) {
   Merge-Sentinel $codexTarget $Gov $BEGIN $END
   Info "Codex: governance merged into $codexTarget"
 
-  $p = Provision-InsaneSearch $isSkill
-  if ($p.ok -and (Test-Path $skillMd)) {
-    $body = Get-Content -Raw -Encoding UTF8 -Path $skillMd
-    $body = [regex]::Replace($body, [regex]::Escape('python3 -m engine'), { param($m) '"' + $p.launcher + '" ' })
-    $hpat = '(?s)' + [regex]::Escape($IHBEGIN) + '.*?' + [regex]::Escape($IHEND) + '\r?\n?'
-    $body = [regex]::Replace($body, $hpat, '')
-    $hostNote = @(
-      $IHBEGIN,
-      'HOST NOTE (Grok Build) — READ FIRST, overrides the shell examples below.',
-      'Invoke the engine ONLY via this launcher (sets cwd + the correct Python for you):',
-      ('  "' + $p.launcher + '" "<URL>" [--selector "<CSS>"] [--device auto|desktop|mobile] [--trace] [--json]'),
-      'IGNORE every literal `python3 -m engine`, `/tmp/...`, and `2>/dev/null` below — POSIX/Claude',
-      'examples that fail here. Phases 0-2 (official APIs + curl_cffi TLS impersonation) work fully.',
-      'Phase 3 uses Playwright via MCP: the engine only SIGNALS must_invoke_playwright_mcp=TRUE; if',
-      'Grok Playwright tool names differ, Phase 3 degrades to the best Phase 0-2 result (do not loop).',
-      $IHEND
-    ) -join "`n"
-    Write-NoBom $skillMd ($hostNote + "`n`n" + $body)
-    $dmsg = if ($p.deps) { 'phases 1-2 live' } else { 'deps MISSING — degraded' }
-  } elseif ($p.ok) { Info 'Grok: engine vendored but SKILL.md absent.' }
-} elseif ($script:hasGrok) {
 }
 
 # ---- CLI plugin install (user scope) ----

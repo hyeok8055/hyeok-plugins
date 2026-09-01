@@ -11,7 +11,7 @@ $END   = '<!-- END hyeok-gov -->'
 $MARKER = '.hyeok-installed'
 $Home_ = $env:USERPROFILE
 $MarketName = 'hyeok-plugins'
-$SkillNames = @('hyeok-governance','typst-korean','diagram-design')
+$SkillNames = @('hyeok-governance','typst-korean','diagram-design','archify')
 
 function Info($m) { Write-Host "[hyeok] $m" }
 function Write-NoBom($path, $text) {
@@ -27,7 +27,7 @@ function Restore-Or-Strip($path) {
     Info "restored $path from backup"
   } elseif (Test-Path $path) {
     $c = Get-Content -Raw -Encoding UTF8 -Path $path
-    foreach ($pair in @(@($BEGIN,$END), @($IBEGIN,$IEND))) {
+    foreach ($pair in @(@($BEGIN,$END))) {
       $pattern = '(?s)\r?\n?' + [regex]::Escape($pair[0]) + '.*?' + [regex]::Escape($pair[1]) + '\r?\n?'
       $c = [regex]::Replace($c, $pattern, '')
     }
