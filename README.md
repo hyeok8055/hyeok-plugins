@@ -8,7 +8,7 @@ hyeok8055의 크로스호스트 에이전트 플러그인 마켓플레이스.
 | **typst-korean** | Typst 한글 문서(PDF·장표·보고서) |
 | **diagram-design** | Editorial HTML+SVG 다이어그램 — 정본 [cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design) |
 | **archify** | 인터랙티브 시스템 맵 — 정본 [tt-a1i/archify](https://github.com/tt-a1i/archify) |
-| **humanize-korean** | 한글 AI 티 제거(윤문) — 정본 [epoko77-ai/im-not-ai](https://github.com/epoko77-ai/im-not-ai). **글·문서 작업 필수** |
+| **humanize-korean** | 한글 AI 티 제거(윤문) — 정본 [epoko77-ai/im-not-ai](https://github.com/epoko77-ai/im-not-ai). **기록용 글·문서 필수** (채팅 제외) |
 
 Claude Code · Codex CLI · Grok Build **user 단위 전역 설치**를 `install.ps1` / `install.sh` 한 번으로 처리한다.
 
@@ -115,7 +115,7 @@ Browser -> API -> Redis -> Postgres 시스템 맵
 정본: [epoko77-ai/im-not-ai](https://github.com/epoko77-ai/im-not-ai) (MIT).  
 `plugins/humanize-korean/` 벤더 — `SOURCE.md` 핀.
 
-거버넌스: 한국어 **글·문서** 산출물(슬랙/메일/보고서/카피 등)은 전달 전 이 스킬로 AI 티 제거가 **필수**.
+거버넌스: **남기는** 한국어 글·문서(보고서/메일 본문/공지/카피 등)는 전달 전 이 스킬로 AI 티 제거가 **필수**. 짧은 채팅 답은 비대상.
 
 # diagram-design
 

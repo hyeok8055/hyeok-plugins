@@ -1,6 +1,6 @@
 {
   "name": "hyeok-governance",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "크로스호스트 에이전트 거버넌스 - ponytail · typst-korean · diagram-design · archify · humanize-korean(im-not-ai) 우선순위·역할 분배. Claude Code / Codex CLI / Grok Build.",
   "author": {
     "name": "hyeok8055",
@@ -26,7 +26,7 @@
   "interface": {
     "displayName": "hyeok-governance",
     "shortDescription": "Cross-host task routing and priority rules",
-    "longDescription": "Orthogonal layers: ponytail (code size), typst-korean (Korean Typst docs), diagram-design (editorial diagrams), archify (interactive system maps), humanize-korean/im-not-ai (REQUIRED Korean prose humanizer for writing/docs).",
+    "longDescription": "Orthogonal layers: ponytail (code size), typst-korean (Korean Typst docs), diagram-design (editorial diagrams), archify (interactive system maps), humanize-korean/im-not-ai (REQUIRED for recorded Korean writing/docs; not chat).",
     "developerName": "hyeok8055",
     "category": "Productivity",
     "capabilities": [

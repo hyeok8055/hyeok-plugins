@@ -42,13 +42,16 @@ lifecycle, before/after architecture delta), use **archify** (canonical skill fr
 Typed JSON IR → validated HTML/SVG. Prefer Archify over inventing ad-hoc SVG or Mermaid
 for system-mapping asks. Cross-host skill dirs under `~/.claude|codex|agents|grok/skills/archify`.
 
-**Layer 5 — humanize-korean / im-not-ai (Korean prose — REQUIRED for writing/docs).**
-Any **Korean writing or document work** the user will read as prose (Slack/메일/보고서/기획서/
-README·문서 초안·블로그·칼럼·고객용 카피, and rewriting such text) **MUST** run through
+**Layer 5 — humanize-korean / im-not-ai (recorded writing/docs — REQUIRED).**
+Applies when the task is to **author or polish a lasting Korean writing artifact**
+(문서·보고서·기획서·README/문서 초안·블로그·칼럼·고객용 카피·보낼 메일 본문·
+채널에 **남기는** 공지/기록용 글, and rewriting such text). Those **MUST** run through
 **humanize-korean** (upstream [epoko77-ai/im-not-ai](https://github.com/epoko77-ai/im-not-ai))
 before delivery: detect AI tells and humanize style **without changing substance**.
-Skip only for: pure code/diff, pure Q&A with no deliverable prose doc, or when the user
-explicitly says to skip humanize / AI-티 무시.
+
+**Does NOT apply** to ordinary chat replies, short back-and-forth, or ephemeral Q&A in
+a conversation — only to writing/document work meant to be kept or shipped as a record.
+Also skip for: pure code/diff, or when the user explicitly says to skip humanize / AI-티 무시.
 
 
 ## 2. Task router — when each layer fires
@@ -61,10 +64,10 @@ explicitly says to skip humanize / AI-티 무시.
   workflow/sequence/data-flow/lifecycle with validation; architecture delta/compare.
   Korean: 시스템 맵, 아키텍처 다이어그램, 런타임 구조, 시퀀스 맵, 데이터플로우.
   **Default for system-architecture mapping.**
-- **humanize-korean (im-not-ai)**: REQUIRED whenever producing or polishing Korean
-  prose documents/copy the user will ship or post. Apply before final delivery.
+- **humanize-korean (im-not-ai)**: REQUIRED for **recorded** Korean writing/docs
+  (artifacts to keep or ship). **Not** for ordinary chat replies.
 
-If none fire (pure Q&A with no prose deliverable), no special layer — answer normally.
+If none fire (chat/Q&A or pure code), no special layer — answer normally.
 
 ## 3. Scope boundaries
 
@@ -87,8 +90,8 @@ facts, numbers, or claims. Does not replace typst-korean layout or diagram skill
 3. System-architecture / interactive map intent → **archify** over diagram-design.
 4. Editorial one-off diagram without IR → diagram-design.
 5. Generic PDF/doc without Typst mention → do NOT auto-use Typst.
-6. Korean prose deliverable → **humanize-korean required** before handoff
-   (after substance is settled; style pass last).
+6. Recorded Korean writing/doc artifact → **humanize-korean required** before handoff
+   (after substance is settled; style pass last). Chat replies are out of scope.
 7. **Intensity** → ponytail FULL default; honor explicit `/ponytail` settings.
 
 ## 5. Intensity
@@ -102,4 +105,4 @@ ponytail = **how much EXECUTABLE code you write**.
 typst-korean = **Korean Typst documents** (explicit only).
 diagram-design = **editorial HTML+SVG diagrams**.
 archify = **interactive validated system maps** (default for architecture/system mapping).
-humanize-korean (im-not-ai) = **required Korean prose humanizer** for writing/docs.
+humanize-korean (im-not-ai) = **required** for recorded Korean writing/docs (not chat).

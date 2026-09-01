@@ -17,7 +17,7 @@ const ONELINER =
   "typst-korean = Typst docs on EXPLICIT request only (not default for generic PDF/장표/보고서). " +
   "diagram-design = editorial HTML+SVG diagrams. " +
   "archify = default for interactive system/architecture maps (validated HTML/SVG IR; not Mermaid unless asked). " +
-  "humanize-korean (im-not-ai) = REQUIRED for Korean writing/docs prose before delivery (skip only if user says so). " +
+  "humanize-korean (im-not-ai) = REQUIRED for recorded Korean writing/docs (not chat replies; skip if user says so). " +
   "Substance > style. NEVER compress code blocks, files-on-disk, commit/PR text, security analysis, " +
   "document content, or mandated clarifying questions. No hard gates — comply by intent.";
 
