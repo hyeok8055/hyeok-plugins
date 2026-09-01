@@ -1,0 +1,6 @@
+{
+  "name": "humanize-korean",
+  "description": "AI 한글 티 제거·윤문 (im-not-ai / humanize-korean). 글·문서 작업 필수.",
+  "version": "2.3.2",
+  "skills": ["skills/humanize-korean", "skills/humanize", "skills/humanize-redo"]
+}

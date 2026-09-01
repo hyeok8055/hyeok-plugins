@@ -4,8 +4,8 @@
     "name": "hyeok8055"
   },
   "metadata": {
-    "description": "hyeok8055 커스텀 플러그인 마켓플레이스 — typst-korean, hyeok-governance, diagram-design, archify. Claude Code / Codex CLI / Grok Build 크로스호스트.",
-    "version": "2.3.0"
+    "description": "hyeok8055 커스텀 플러그인 마켓플레이스 — typst-korean, hyeok-governance, diagram-design, archify, humanize-korean. Claude Code / Codex CLI / Grok Build 크로스호스트.",
+    "version": "2.4.0"
   },
   "plugins": [
     {
@@ -25,6 +25,11 @@
       "name": "archify",
       "source": "./plugins/archify",
       "description": "Interactive system maps (HTML/SVG IR). Canonical skill from tt-a1i/archify v2.16, vendored as 정본."
+    },
+    {
+      "name": "humanize-korean",
+      "source": "./plugins/humanize-korean",
+      "description": "Korean AI-tell humanizer (im-not-ai). Required for writing/docs via governance."
     }
   ]
 }
