@@ -243,7 +243,7 @@ fi
 if [ "$SKIP_FONTS" = 1 ]; then
   info "Pretendard font install skipped (--skip-fonts)"
 else
-  if [ -x "$SCRIPT_DIR/scripts/install-pretendard.sh" ]; then
+  if [ -f "$SCRIPT_DIR/scripts/install-pretendard.sh" ]; then
     sh "$SCRIPT_DIR/scripts/install-pretendard.sh" || warn "Pretendard font install failed (Typst can still use --font-path later)"
   else
     warn "scripts/install-pretendard.sh missing"
