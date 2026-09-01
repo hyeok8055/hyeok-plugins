@@ -5,26 +5,20 @@
   User-scope install for Claude Code, Codex CLI, and Grok Build:
     1) skill trees → host skill dirs (~/.claude|~/.codex|~/.grok|~/.agents/skills)
     2) official CLI plugin marketplace + install when the host CLI is present
-    3) governance merge (Codex AGENTS.md), caveman/ponytail defaultMode pins
-    4) optional -UpstreamInstall: caveman remote installer + insane-search engine
+    3) governance merge (Codex AGENTS.md), ponytail defaultMode pin
 
   Guarantees: merge-safe, idempotent, fail-open, NO global env vars (no setx).
 
-.PARAMETER UpstreamInstall
-  Opt-in network steps: caveman installer + insane-search vendoring for Codex/Grok.
 
 .PARAMETER SkipCliPlugins
   Skip `claude|codex|grok plugin ...` calls; still install skill trees + configs.
 
-.PARAMETER CavemanMode  Default: ultra
 .PARAMETER PonytailMode Default: full
 #>
 [CmdletBinding()]
 param(
-  [switch]$UpstreamInstall,
   [switch]$SkipCliPlugins,
   [ValidateSet('off','lite','full','ultra','wenyan-lite','wenyan','wenyan-full','wenyan-ultra')]
-  [string]$CavemanMode = 'ultra',
   [ValidateSet('off','lite','full','ultra')]
   [string]$PonytailMode = 'full'
 )
@@ -32,12 +26,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $BEGIN  = '<!-- BEGIN hyeok-gov -->'
 $END    = '<!-- END hyeok-gov -->'
-$IBEGIN = '<!-- BEGIN hyeok-insane-search -->'
-$IEND   = '<!-- END hyeok-insane-search -->'
-$IHBEGIN = '<!-- BEGIN hyeok-insane-search-host -->'
-$IHEND   = '<!-- END hyeok-insane-search-host -->'
 $IS_TAG  = 'v0.8.2'
-$IS_REPO = 'https://github.com/fivetaku/insane-search'
 $MARKER  = '.hyeok-installed'
 $Home_   = $env:USERPROFILE
 $Touched = New-Object System.Collections.ArrayList
@@ -90,7 +79,7 @@ function Merge-Sentinel($path, $body, $begin, $end) {
     if ($null -eq $raw) { $raw = '' }
     $content = [string]$raw
     $bak = "$path.pre-hyeok.bak"
-    if ((-not (Test-Path $bak)) -and ($content -notmatch 'hyeok-gov') -and ($content -notmatch 'hyeok-insane-search') -and ($content.Length -gt 0)) {
+    if ((-not (Test-Path $bak)) -and ($content -notmatch 'hyeok-gov') -and ($content.Length -gt 0)) {
       Copy-Item $path $bak -Force
     }
     $pattern = '(?s)' + [regex]::Escape($begin) + '.*?' + [regex]::Escape($end)
@@ -203,9 +192,8 @@ function Install-GovernanceSkill($govBody) {
     '---',
     'name: hyeok-governance',
     'description: >',
-    '  Task routing/priority — caveman (chat style), ponytail (code policy),',
-    '  typst-korean (Korean Typst docs, explicit only), insane-search (web/data/research),',
-    '  diagram-design (editorial HTML+SVG diagrams). Code work, PDF/doc, diagrams, search, role overlap.',
+    '  Task routing/priority — ponytail (code policy), typst-korean (Korean Typst docs, explicit only),',
+    '  diagram-design (editorial HTML+SVG), archify (interactive system maps). Code, PDF/doc, diagrams.',
     '---',
     '',
     ''
@@ -220,87 +208,6 @@ function Install-GovernanceSkill($govBody) {
   }
 }
 
-# ---- insane-search helpers ----
-
-function Resolve-Python {
-  $cands = @(@('python3'), @('python'), @('py','-3'))
-  foreach ($c in $cands) {
-    try {
-      $name = $c[0]
-      if (-not (Get-Command $name -ErrorAction SilentlyContinue)) { continue }
-      $verArgs = @(); if ($c.Count -gt 1) { $verArgs += $c[1] }; $verArgs += '--version'
-      $ver = (& $name @verArgs 2>$null | Out-String).Trim()
-      if ($LASTEXITCODE -ne 0 -or $ver -notmatch '^Python 3') { continue }
-      $exArgs = @(); if ($c.Count -gt 1) { $exArgs += $c[1] }; $exArgs += @('-c','import sys;print(sys.executable)')
-      $abs = (& $name @exArgs 2>$null | Out-String).Trim()
-      if ($LASTEXITCODE -ne 0 -or -not $abs) { continue }
-      if ($abs -match 'WindowsApps') { continue }
-      return $abs
-    } catch { continue }
-  }
-  return $null
-}
-
-function Vendor-InsaneSearch($dest, $tag) {
-  $marker = Join-Path $dest '.hyeok-vendor'
-  $mainpy = Join-Path $dest 'engine\__main__.py'
-  if ((Test-Path $mainpy) -and (Test-Path $marker) -and ((Get-Content -Raw $marker).Trim() -eq $tag)) { return $true }
-  if (-not (Get-Command git -ErrorAction SilentlyContinue)) { Warn 'git not found; insane-search not vendored'; return $false }
-  $tmp = Join-Path $env:TEMP ('hyeok-is-' + [guid]::NewGuid().ToString('N').Substring(0,8))
-  try {
-    & git clone --depth 1 --branch $tag --quiet $IS_REPO $tmp
-    if ($LASTEXITCODE -ne 0) { Warn "git clone failed (rc=$LASTEXITCODE)"; return $false }
-    $srcEngine = Join-Path $tmp 'skills\insane-search\engine'
-    $srcSkill  = Join-Path $tmp 'skills\insane-search\SKILL.md'
-    if (-not (Test-Path (Join-Path $srcEngine '__main__.py'))) { Warn 'engine/__main__.py missing in clone'; return $false }
-    if (-not (Test-Path $dest)) { New-Item -ItemType Directory -Force -Path $dest | Out-Null }
-    $dstEngine = Join-Path $dest 'engine'
-    if (Test-Path $dstEngine) { Remove-Item -Recurse -Force $dstEngine }
-    Copy-Item -Recurse -Force $srcEngine $dstEngine
-    if (Test-Path $srcSkill) { Copy-Item -Force $srcSkill (Join-Path $dest 'SKILL.md') }
-    if (-not (Test-Path (Join-Path $dstEngine '__main__.py'))) { Warn 'vendor copy failed'; return $false }
-    Write-NoBom $marker $tag
-    return $true
-  } catch { Warn "vendor failed: $($_.Exception.Message)"; return $false }
-  finally { if (Test-Path $tmp) { try { Remove-Item -Recurse -Force $tmp } catch {} } }
-}
-
-function Install-EngineDeps($py) {
-  try { & $py -c 'import curl_cffi,bs4,yaml' 2>$null; if ($LASTEXITCODE -eq 0) { return $true } } catch {}
-  try {
-    & $py -m pip install --only-binary=:all: 'curl_cffi>=0.11' beautifulsoup4 pyyaml -q
-    if ($LASTEXITCODE -ne 0) { Warn "pip install failed (rc=$LASTEXITCODE); phases 1-2 disabled" }
-  } catch { Warn "pip errored: $($_.Exception.Message)" }
-  try { & $py -m pip install yt-dlp -q 2>$null } catch {}
-  try { & $py -c 'import curl_cffi,bs4,yaml' 2>$null; return ($LASTEXITCODE -eq 0) } catch { return $false }
-}
-
-function Write-Launcher($dir, $py) {
-  if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
-  $cmd = "@echo off`r`ncd /d `"%~dp0`"`r`n`"$py`" -m engine %*`r`n"
-  [System.IO.File]::WriteAllText((Join-Path $dir 'run-engine.cmd'), $cmd, (New-Object System.Text.UTF8Encoding($false)))
-  $sh = "#!/usr/bin/env sh`ncd `"`$(dirname `"`$0`")`" || exit 1`nexec `"$py`" -m engine `"`$@`"`n"
-  [System.IO.File]::WriteAllText((Join-Path $dir 'run-engine.sh'), $sh, (New-Object System.Text.UTF8Encoding($false)))
-  Note (Join-Path $dir 'run-engine.cmd')
-  return (Join-Path $dir 'run-engine.cmd')
-}
-
-function Test-EngineSmoke($launcher) {
-  try { & $launcher --help 2>$null | Out-Null; return ($LASTEXITCODE -eq 0) } catch { return $false }
-}
-
-function Provision-InsaneSearch($dest) {
-  $py = Resolve-Python
-  if (-not $py) { Warn 'no real Python 3; insane-search skipped'; return @{ ok=$false } }
-  if (-not (Vendor-InsaneSearch $dest $IS_TAG)) { return @{ ok=$false } }
-  $deps = Install-EngineDeps $py
-  $launcher = Write-Launcher $dest $py
-  if (-not (Test-EngineSmoke $launcher)) { Warn 'engine smoke failed'; return @{ ok=$false } }
-  return @{ ok=$true; launcher=$launcher; deps=$deps }
-}
-
-# ---- host CLI plugin install (user scope) ----
-
 function Install-CliPlugins {
   if ($SkipCliPlugins) { Info 'CLI plugin install skipped (-SkipCliPlugins)'; return }
   $root = $PSScriptRoot
@@ -313,7 +220,7 @@ function Install-CliPlugins {
         # Fallback: GitHub remote marketplace
         & claude plugin marketplace add hyeok8055/hyeok-plugins --scope user 2>&1 | Out-Null
       }
-      foreach ($p in @('hyeok-governance','typst-korean','diagram-design')) {
+      foreach ($p in @('hyeok-governance','typst-korean','diagram-design','archify')) {
         $id = "${p}@${MarketName}"
         try {
           & claude plugin install $id -s user 2>&1 | Out-Null
@@ -345,7 +252,7 @@ function Install-CliPlugins {
       if ($LASTEXITCODE -ne 0) {
         & codex plugin marketplace add hyeok8055/hyeok-plugins --json 2>&1 | Out-Null
       }
-      foreach ($p in @('hyeok-governance','typst-korean','diagram-design')) {
+      foreach ($p in @('hyeok-governance','typst-korean','diagram-design','archify')) {
         $id = "${p}@${MarketName}"
         $added = $false
         try {
@@ -389,7 +296,7 @@ function Install-CliPlugins {
     # marketplace add may fail if already configured — that is OK
     try { & grok plugin marketplace add $root 2>&1 | Out-Null } catch {}
     try { & grok plugin marketplace add hyeok8055/hyeok-plugins 2>&1 | Out-Null } catch {}
-    foreach ($rel in @('plugins\hyeok-governance','plugins\typst-korean','plugins\diagram-design')) {
+    foreach ($rel in @('plugins\hyeok-governance','plugins\typst-korean','plugins\diagram-design','plugins\archify')) {
       $src = Join-Path $root $rel
       try {
         $out = & grok plugin install $src --trust 2>&1 | Out-String
@@ -419,6 +326,7 @@ if (-not (Test-Path $GovPath)) { throw "GOVERNANCE.md not found at $GovPath — 
 $Gov = Get-Content -Raw -Encoding UTF8 -Path $GovPath
 $TypstSkillDir = Join-Path $PSScriptRoot 'plugins\typst-korean\skills\typst-korean'
 $DiagramSkillDir = Join-Path $PSScriptRoot 'plugins\diagram-design\skills\diagram-design'
+$ArchifySkillDir = Join-Path $PSScriptRoot 'plugins\archify\skills\archify'
 
 # ---- host detection ----
 function Have($name, $dir) {
@@ -431,7 +339,6 @@ $script:hasGrok   = (Have 'grok' '.grok') -or (Test-Path (Join-Path $Home_ '.gro
 Info ("hosts detected -> claude:{0} codex:{1} grok:{2}" -f $script:hasClaude,$script:hasCodex,$script:hasGrok)
 
 # ---- intensity pins ----
-Set-DefaultMode 'caveman'  $CavemanMode
 Set-DefaultMode 'ponytail' $PonytailMode
 
 # ---- user-global skill trees (all hosts) ----
@@ -441,11 +348,11 @@ if (Test-Path $TypstSkillDir) { Install-SkillTree 'typst-korean' $TypstSkillDir 
 else { Warn "typst-korean skill missing at $TypstSkillDir" }
 if (Test-Path $DiagramSkillDir) { Install-SkillTree 'diagram-design' $DiagramSkillDir 'upstream:cathrynlavery/diagram-design' }
 else { Warn "diagram-design skill missing at $DiagramSkillDir" }
+if (Test-Path $ArchifySkillDir) { Install-SkillTree 'archify' $ArchifySkillDir 'upstream:tt-a1i/archify' }
+else { Warn "archify skill missing at $ArchifySkillDir" }
 
 # ---- Claude flag + hook smoke ----
 if ($script:hasClaude) {
-  $flag = Join-Path $Home_ '.claude\.caveman-active'
-  try { Write-NoBom $flag $CavemanMode; Note $flag; Info "caveman flag -> $CavemanMode" } catch { Warn 'flag write skipped' }
   $node = Get-Command node -ErrorAction SilentlyContinue
   if ($node) {
     $hook = Join-Path $PSScriptRoot 'plugins\hyeok-governance\hooks\inject-governance.js'
@@ -463,87 +370,12 @@ if ($script:hasCodex) {
   Merge-Sentinel $codexTarget $Gov $BEGIN $END
   Info "Codex: governance merged into $codexTarget"
 
-  if ($UpstreamInstall) {
-    $isDir = Join-Path $Home_ '.codex\tools\insane-search'
-    $p = Provision-InsaneSearch $isDir
-    if ($p.ok) {
-      $main = Join-Path $isDir 'engine\__main__.py'
-      $lines = @(
-        '## insane-search (web/data/research retrieval — enforced by THIS instruction)',
-        'Codex has NO skill auto-activation, so this paragraph is the only lever — honor it as a',
-        'standing order, same strength as the governance block above.',
-        '',
-        'For ANY web search / data lookup / research, and ALWAYS when a fetch returns 402/403/blocked/',
-        'CAPTCHA/WAF or targets X, Reddit, YouTube, GitHub, Naver, Coupang, LinkedIn, Medium, Substack,',
-        'Stack Overflow, Mastodon, Threads, Hacker News: route through insane-search instead of giving',
-        'up on a blocked plain fetch. Use it by default, do NOT ask.',
-        '',
-        'HOW TO RUN (use the launcher; it fixes cwd, shell, and interpreter):',
-        ('  "' + $p.launcher + '" "<URL>" [--selector "<CSS>"] [--device auto|desktop|mobile] [--trace] [--json]'),
-        'Add --no-playwright on this host (the browser phase is not available here).',
-        'Exit 0 = ok, 1 = all attempts failed (read the trace), 2 = bad args.',
-        'Do NOT, on a 403/402/blocked, fall back to a plain fetch/curl — invoke the engine.',
-        '',
-        ('AVAILABILITY: if "' + $main + '" does not exist, insane-search was NOT vendored — say so and'),
-        'use the host best search. Do not pretend the engine ran.',
-        '',
-        'PHASES: Phase 0 (official APIs) + Phases 1-2 (curl_cffi TLS impersonation) run on Codex.',
-        'Phase 3 (headless browser) is NOT available transparently; the engine exits 1 with a',
-        '"must_invoke_playwright_mcp = TRUE" summary — treat as browser unavailable, return the best',
-        'Phase 0-2 result, do not loop.'
-      )
-      Merge-Sentinel $codexTarget ($lines -join "`n") $IBEGIN $IEND
-      $dmsg = if ($p.deps) { 'phases 1-2 live' } else { 'deps MISSING — phases 1-2 disabled' }
-      Info "Codex: insane-search vendored ($isDir); $dmsg."
-    } else { Info 'Codex: insane-search not wired (see warning); governance still active.' }
-  } else { Info 'Codex: insane-search skipped (-UpstreamInstall vendors the engine).' }
-}
-
-# ---- Grok insane-search vendor (skills already installed above) ----
-if ($script:hasGrok -and $UpstreamInstall) {
-  $isSkill = Join-Path $Home_ '.agents\skills\insane-search'
-  $skillMd = Join-Path $isSkill 'SKILL.md'
-  if ((Test-Path $skillMd) -and (-not (Test-Path (Join-Path $isSkill '.hyeok-vendor'))) -and (-not (Test-Path "$skillMd.pre-hyeok.bak"))) {
-    Copy-Item $skillMd "$skillMd.pre-hyeok.bak" -Force; Warn 'existing insane-search skill backed up'
-  }
-  $p = Provision-InsaneSearch $isSkill
-  if ($p.ok -and (Test-Path $skillMd)) {
-    $body = Get-Content -Raw -Encoding UTF8 -Path $skillMd
-    $body = [regex]::Replace($body, [regex]::Escape('python3 -m engine'), { param($m) '"' + $p.launcher + '" ' })
-    $hpat = '(?s)' + [regex]::Escape($IHBEGIN) + '.*?' + [regex]::Escape($IHEND) + '\r?\n?'
-    $body = [regex]::Replace($body, $hpat, '')
-    $hostNote = @(
-      $IHBEGIN,
-      'HOST NOTE (Grok Build) — READ FIRST, overrides the shell examples below.',
-      'Invoke the engine ONLY via this launcher (sets cwd + the correct Python for you):',
-      ('  "' + $p.launcher + '" "<URL>" [--selector "<CSS>"] [--device auto|desktop|mobile] [--trace] [--json]'),
-      'IGNORE every literal `python3 -m engine`, `/tmp/...`, and `2>/dev/null` below — POSIX/Claude',
-      'examples that fail here. Phases 0-2 (official APIs + curl_cffi TLS impersonation) work fully.',
-      'Phase 3 uses Playwright via MCP: the engine only SIGNALS must_invoke_playwright_mcp=TRUE; if',
-      'Grok Playwright tool names differ, Phase 3 degrades to the best Phase 0-2 result (do not loop).',
-      $IHEND
-    ) -join "`n"
-    Write-NoBom $skillMd ($hostNote + "`n`n" + $body)
-    $dmsg = if ($p.deps) { 'phases 1-2 live' } else { 'deps MISSING — degraded' }
-    Info "Grok: insane-search vendored as user skill ($isSkill); $dmsg."
-  } elseif ($p.ok) { Info 'Grok: engine vendored but SKILL.md absent.' }
-  else { Info 'Grok: insane-search not wired (see warning).' }
-} elseif ($script:hasGrok) {
-  Info 'Grok: insane-search skipped (-UpstreamInstall vendors the engine).'
 }
 
 # ---- CLI plugin install (user scope) ----
 Install-CliPlugins
 
 # ---- optional upstream ----
-if ($UpstreamInstall) {
-  Info 'Running caveman official installer (remote exec)...'
-  try { irm https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1 | iex }
-  catch { Warn "caveman upstream installer failed: $($_.Exception.Message)" }
-  Set-DefaultMode 'caveman' $CavemanMode
-} else {
-  Info 'Skipped remote installers (-UpstreamInstall enables caveman + insane-search vendoring).'
-}
 
 # ---- summary ----
 Write-Host ''

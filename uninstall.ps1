@@ -8,12 +8,10 @@
 $ErrorActionPreference = 'Continue'
 $BEGIN = '<!-- BEGIN hyeok-gov -->'
 $END   = '<!-- END hyeok-gov -->'
-$IBEGIN = '<!-- BEGIN hyeok-insane-search -->'
-$IEND   = '<!-- END hyeok-insane-search -->'
 $MARKER = '.hyeok-installed'
 $Home_ = $env:USERPROFILE
 $MarketName = 'hyeok-plugins'
-$SkillNames = @('hyeok-governance','typst-korean','diagram-design')
+$SkillNames = @('hyeok-governance','typst-korean','diagram-design','archify')
 
 function Info($m) { Write-Host "[hyeok] $m" }
 function Write-NoBom($path, $text) {
@@ -29,7 +27,7 @@ function Restore-Or-Strip($path) {
     Info "restored $path from backup"
   } elseif (Test-Path $path) {
     $c = Get-Content -Raw -Encoding UTF8 -Path $path
-    foreach ($pair in @(@($BEGIN,$END), @($IBEGIN,$IEND))) {
+    foreach ($pair in @(@($BEGIN,$END))) {
       $pattern = '(?s)\r?\n?' + [regex]::Escape($pair[0]) + '.*?' + [regex]::Escape($pair[1]) + '\r?\n?'
       $c = [regex]::Replace($c, $pattern, '')
     }
@@ -88,11 +86,8 @@ Restore-Or-Strip (Join-Path $Home_ '.codex\AGENTS.override.md')
 Restore-Or-Strip (Join-Path $Home_ '.codex\AGENTS.md')
 Restore-Or-Strip (Join-Path $Home_ '.grok\GROK.md')
 Restore-Or-Strip (Join-Path $Home_ 'AGENTS.override.md')
-Remove-DefaultMode 'caveman'
 Remove-DefaultMode 'ponytail'
 
-$flag = Join-Path $Home_ '.claude\.caveman-active'
-if (Test-Path $flag) { Remove-Item $flag -Force; Info "removed caveman flag" }
 
 # User skill trees (marker-guarded)
 $skillRoots = @(
@@ -106,9 +101,6 @@ foreach ($root in $skillRoots) {
   foreach ($n in $SkillNames) { Remove-MarkedSkill $root $n }
 }
 
-# insane-search vendors
-Remove-Vendor (Join-Path $Home_ '.codex\tools\insane-search')
-Remove-Vendor (Join-Path $Home_ '.agents\skills\insane-search')
 Info 'Note: pip packages (curl_cffi/bs4/pyyaml) are intentionally NOT uninstalled.'
 
 # Best-effort CLI plugin uninstall
@@ -124,4 +116,4 @@ foreach ($pair in @(
   }
 }
 
-Info 'Uninstall complete. (caveman/ponytail keep their own uninstallers.)'
+Info 'Uninstall complete.'

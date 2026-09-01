@@ -4,8 +4,8 @@
     "name": "hyeok8055"
   },
   "metadata": {
-    "description": "hyeok8055 커스텀 플러그인 마켓플레이스 — typst-korean, hyeok-governance, diagram-design(정본), insane-search. Claude Code / Codex CLI / Grok Build 크로스호스트.",
-    "version": "2.2.0"
+    "description": "hyeok8055 커스텀 플러그인 마켓플레이스 — typst-korean, hyeok-governance, diagram-design, archify. Claude Code / Codex CLI / Grok Build 크로스호스트.",
+    "version": "2.3.0"
   },
   "plugins": [
     {
@@ -22,12 +22,9 @@
       "description": "Editorial diagrams (HTML+SVG). Canonical skill from cathrynlavery/diagram-design, vendored as 정본."
     },
     {
-      "name": "insane-search",
-      "source": {
-        "source": "github",
-        "repo": "fivetaku/insane-search"
-      },
-      "description": "차단(403/CAPTCHA/WAF)·소셜·JS 사이트 우회 검색/페치. hyeok-governance가 dependency로 자동설치. (출처: fivetaku/insane-search)"
+      "name": "archify",
+      "source": "./plugins/archify",
+      "description": "Interactive system maps (HTML/SVG IR). Canonical skill from tt-a1i/archify v2.16, vendored as 정본."
     }
   ]
 }

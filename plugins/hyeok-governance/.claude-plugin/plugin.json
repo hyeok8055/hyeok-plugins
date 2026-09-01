@@ -1,14 +1,40 @@
 {
   "name": "hyeok-governance",
-  "version": "1.2.0",
-  "description": "크로스호스트 에이전트 거버넌스 - caveman + ponytail + typst-korean + insane-search + diagram-design 우선순위·역할 분배. Claude Code / Codex CLI / Grok Build.",
+  "version": "1.3.0",
+  "description": "크로스호스트 에이전트 거버넌스 - ponytail · typst-korean · diagram-design · archify 우선순위·역할 분배. Claude Code / Codex CLI / Grok Build.",
   "author": {
     "name": "hyeok8055",
     "url": "https://github.com/hyeok8055"
   },
-  "license": "MIT",
   "homepage": "https://github.com/hyeok8055/hyeok-plugins",
   "repository": "https://github.com/hyeok8055/hyeok-plugins",
-  "keywords": ["governance", "caveman", "ponytail", "typst-korean", "insane-search", "diagram-design", "hooks", "policy", "cross-host"],
-  "dependencies": ["insane-search"]
+  "license": "MIT",
+  "keywords": [
+    "governance",
+    "ponytail",
+    "typst-korean",
+    "diagram-design",
+    "archify",
+    "hooks",
+    "policy",
+    "cross-host"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "hyeok-governance",
+    "shortDescription": "Cross-host task routing and priority rules",
+    "longDescription": "Orthogonal layers: ponytail (code size), typst-korean (Korean Typst docs), diagram-design (editorial diagrams), archify (interactive system maps).",
+    "developerName": "hyeok8055",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/hyeok8055/hyeok-plugins",
+    "defaultPrompt": [
+      "Follow hyeok-governance standing orders for this session."
+    ],
+    "brandColor": "#1c1917"
+  }
 }

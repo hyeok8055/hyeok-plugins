@@ -6,8 +6,6 @@
 set -u
 BEGIN='<!-- BEGIN hyeok-gov -->'
 END='<!-- END hyeok-gov -->'
-IBEGIN='<!-- BEGIN hyeok-insane-search -->'
-IEND='<!-- END hyeok-insane-search -->'
 MARKER='.hyeok-installed'
 MARKET='hyeok-plugins'
 info() { echo "[hyeok] $1"; }
@@ -79,14 +77,12 @@ restore_or_strip "$HOME/.codex/AGENTS.override.md"
 restore_or_strip "$HOME/.codex/AGENTS.md"
 restore_or_strip "$HOME/.grok/GROK.md"
 restore_or_strip "$HOME/AGENTS.override.md"
-remove_default_mode caveman
 remove_default_mode ponytail
 
-[ -f "$HOME/.claude/.caveman-active" ] && { rm -f "$HOME/.claude/.caveman-active"; info "removed caveman flag"; }
 
 for root in "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.grok/skills"; do
   [ -d "$root" ] || continue
-  for n in hyeok-governance typst-korean diagram-design; do
+  for n in hyeok-governance typst-korean diagram-design archify; do
     remove_marked_skill "$root" "$n"
   done
 done
@@ -97,21 +93,21 @@ info "Note: pip packages (curl_cffi/bs4/pyyaml) are intentionally NOT uninstalle
 
 # Best-effort CLI plugin uninstall
 if command -v claude >/dev/null 2>&1; then
-  for p in hyeok-governance typst-korean diagram-design; do
+  for p in hyeok-governance typst-korean diagram-design archify; do
     claude plugin uninstall "${p}@${MARKET}" >/dev/null 2>&1 && info "Claude: uninstalled ${p}@${MARKET}" || true
   done
 fi
 if command -v codex >/dev/null 2>&1; then
-  for p in hyeok-governance typst-korean diagram-design; do
+  for p in hyeok-governance typst-korean diagram-design archify; do
     codex plugin remove "${p}@${MARKET}" >/dev/null 2>&1 || true
     codex plugin remove "$p" --marketplace "$MARKET" >/dev/null 2>&1 || true
     info "Codex: attempted remove $p"
   done
 fi
 if command -v grok >/dev/null 2>&1; then
-  for p in hyeok-governance typst-korean diagram-design; do
+  for p in hyeok-governance typst-korean diagram-design archify; do
     grok plugin uninstall "$p" --confirm >/dev/null 2>&1 && info "Grok: uninstalled $p" || true
   done
 fi
 
-info "Uninstall complete. (caveman/ponytail keep their own uninstallers.)"
+info "Uninstall complete."
