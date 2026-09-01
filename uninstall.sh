@@ -83,7 +83,7 @@ remove_default_mode ponytail
 
 for root in "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.grok/skills"; do
   [ -d "$root" ] || continue
-  for n in hyeok-governance typst-korean diagram-design archify; do
+  for n in hyeok-governance typst-korean diagram-design archify humanize-korean humanize humanize-redo; do
     remove_marked_skill "$root" "$n"
   done
 done
@@ -94,19 +94,19 @@ info "Note: pip packages (curl_cffi/bs4/pyyaml) are intentionally NOT uninstalle
 
 # Best-effort CLI plugin uninstall
 if command -v claude >/dev/null 2>&1; then
-  for p in hyeok-governance typst-korean diagram-design archify; do
+  for p in hyeok-governance typst-korean diagram-design archify humanize-korean humanize humanize-redo; do
     claude plugin uninstall "${p}@${MARKET}" >/dev/null 2>&1 && info "Claude: uninstalled ${p}@${MARKET}" || true
   done
 fi
 if command -v codex >/dev/null 2>&1; then
-  for p in hyeok-governance typst-korean diagram-design archify; do
+  for p in hyeok-governance typst-korean diagram-design archify humanize-korean humanize humanize-redo; do
     codex plugin remove "${p}@${MARKET}" >/dev/null 2>&1 || true
     codex plugin remove "$p" --marketplace "$MARKET" >/dev/null 2>&1 || true
     info "Codex: attempted remove $p"
   done
 fi
 if command -v grok >/dev/null 2>&1; then
-  for p in hyeok-governance typst-korean diagram-design archify; do
+  for p in hyeok-governance typst-korean diagram-design archify humanize-korean humanize humanize-redo; do
     grok plugin uninstall "$p" --confirm >/dev/null 2>&1 && info "Grok: uninstalled $p" || true
   done
 fi

@@ -11,7 +11,7 @@ $END   = '<!-- END hyeok-gov -->'
 $MARKER = '.hyeok-installed'
 $Home_ = $env:USERPROFILE
 $MarketName = 'hyeok-plugins'
-$SkillNames = @('hyeok-governance','typst-korean','diagram-design','archify')
+$SkillNames = @('hyeok-governance','typst-korean','diagram-design','archify','humanize-korean','humanize','humanize-redo')
 
 function Info($m) { Write-Host "[hyeok] $m" }
 function Write-NoBom($path, $text) {

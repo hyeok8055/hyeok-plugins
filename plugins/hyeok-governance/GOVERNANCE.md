@@ -11,7 +11,7 @@ turn) — **not** hard tool gates. There are deliberately **no** PreToolUse Edit
 blocks. Treat the rules below as binding standing orders; a non-compliant turn cannot be
 hard-blocked, so comply by intent.
 
-## 1. Four layers (orthogonal, by precedence)
+## 1. Five layers (orthogonal, by precedence)
 
 **Layer 1 — ponytail (code policy).**
 Code you write or edit that will be **executed or shipped** obeys the minimal-code ladder:
@@ -42,6 +42,15 @@ lifecycle, before/after architecture delta), use **archify** (canonical skill fr
 Typed JSON IR → validated HTML/SVG. Prefer Archify over inventing ad-hoc SVG or Mermaid
 for system-mapping asks. Cross-host skill dirs under `~/.claude|codex|agents|grok/skills/archify`.
 
+**Layer 5 — humanize-korean / im-not-ai (Korean prose — REQUIRED for writing/docs).**
+Any **Korean writing or document work** the user will read as prose (Slack/메일/보고서/기획서/
+README·문서 초안·블로그·칼럼·고객용 카피, and rewriting such text) **MUST** run through
+**humanize-korean** (upstream [epoko77-ai/im-not-ai](https://github.com/epoko77-ai/im-not-ai))
+before delivery: detect AI tells and humanize style **without changing substance**.
+Skip only for: pure code/diff, pure Q&A with no deliverable prose doc, or when the user
+explicitly says to skip humanize / AI-티 무시.
+
+
 ## 2. Task router — when each layer fires
 
 - **ponytail**: ANY authoring/editing of executable or shippable code.
@@ -52,8 +61,10 @@ for system-mapping asks. Cross-host skill dirs under `~/.claude|codex|agents|gro
   workflow/sequence/data-flow/lifecycle with validation; architecture delta/compare.
   Korean: 시스템 맵, 아키텍처 다이어그램, 런타임 구조, 시퀀스 맵, 데이터플로우.
   **Default for system-architecture mapping.**
+- **humanize-korean (im-not-ai)**: REQUIRED whenever producing or polishing Korean
+  prose documents/copy the user will ship or post. Apply before final delivery.
 
-If none fire (pure Q&A), no special layer — answer normally.
+If none fire (pure Q&A with no prose deliverable), no special layer — answer normally.
 
 ## 3. Scope boundaries
 
@@ -66,6 +77,9 @@ not request.
 **diagram-design / archify**: do not invent Mermaid as the default. Archify owns
 validated system maps; diagram-design owns editorial HTML+SVG sketches.
 
+**humanize-korean**: governs Korean **prose style** only (AI-티 제거). Does not change
+facts, numbers, or claims. Does not replace typst-korean layout or diagram skills.
+
 ## 4. Conflict resolution
 
 1. **Substance beats style.**
@@ -73,7 +87,9 @@ validated system maps; diagram-design owns editorial HTML+SVG sketches.
 3. System-architecture / interactive map intent → **archify** over diagram-design.
 4. Editorial one-off diagram without IR → diagram-design.
 5. Generic PDF/doc without Typst mention → do NOT auto-use Typst.
-6. **Intensity** → ponytail FULL default; honor explicit `/ponytail` settings.
+6. Korean prose deliverable → **humanize-korean required** before handoff
+   (after substance is settled; style pass last).
+7. **Intensity** → ponytail FULL default; honor explicit `/ponytail` settings.
 
 ## 5. Intensity
 
@@ -86,3 +102,4 @@ ponytail = **how much EXECUTABLE code you write**.
 typst-korean = **Korean Typst documents** (explicit only).
 diagram-design = **editorial HTML+SVG diagrams**.
 archify = **interactive validated system maps** (default for architecture/system mapping).
+humanize-korean (im-not-ai) = **required Korean prose humanizer** for writing/docs.
