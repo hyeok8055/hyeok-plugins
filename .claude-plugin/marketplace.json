@@ -4,8 +4,8 @@
     "name": "hyeok8055"
   },
   "metadata": {
-    "description": "hyeok8055 커스텀 플러그인 마켓플레이스 — typst-korean, hyeok-governance, diagram-design, archify, humanize-korean. Claude Code / Codex CLI / Grok Build 크로스호스트.",
-    "version": "2.4.0"
+    "description": "hyeok8055 커스텀 플러그인 마켓플레이스 — typst-korean, hyeok-governance, diagram-design, archify, humanize-korean, lieflat-charts. Claude Code / Codex CLI / Grok Build 크로스호스트.",
+    "version": "2.5.0"
   },
   "plugins": [
     {
@@ -30,6 +30,11 @@
       "name": "humanize-korean",
       "source": "./plugins/humanize-korean",
       "description": "Korean AI-tell humanizer (im-not-ai). Required for writing/docs via governance."
+    },
+    {
+      "name": "lieflat-charts",
+      "source": "./plugins/lieflat-charts",
+      "description": "Numeric HTML charts (63 templates). Vendored from larashero3-dotcom/lieflat-charts. PolyForm Noncommercial 1.0.0 — not MIT."
     }
   ]
 }

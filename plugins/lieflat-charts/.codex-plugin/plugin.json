@@ -1,0 +1,35 @@
+{
+  "name": "lieflat-charts",
+  "description": "Template-driven numeric HTML charts (63 types). PolyForm Noncommercial 1.0.0 — not MIT.",
+  "version": "1.0.0",
+  "author": {
+    "name": "moxt.ai / larashero3-dotcom",
+    "url": "https://github.com/larashero3-dotcom/lieflat-charts"
+  },
+  "homepage": "https://github.com/larashero3-dotcom/lieflat-charts",
+  "repository": "https://github.com/larashero3-dotcom/lieflat-charts",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "keywords": [
+    "charts",
+    "visualization",
+    "html",
+    "noncommercial"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Lieflat Charts",
+    "shortDescription": "Numeric data to polished HTML charts from 63 templates.",
+    "longDescription": "Pick a template by data shape (Lupi Editorial, Basics, Glance, Maps, Interactive) and emit a single-file HTML chart. Default is chart mode; report templates only when explicitly requested. License is PolyForm Noncommercial 1.0.0.",
+    "developerName": "moxt.ai",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/larashero3-dotcom/lieflat-charts",
+    "defaultPrompt": [
+      "Turn this table into an HTML chart."
+    ],
+    "brandColor": "#1c1c1a"
+  }
+}

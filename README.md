@@ -84,10 +84,22 @@ grok plugin list
 |------|------|---------|------|
 | 1 | **ponytail** | **실행·배포 코드** 양 (최소-단 부실 금지) | FULL |
 | 2 | **typst-korean** | Typst 한글 문서 (**명시 요청 시만**) | 옵트인 |
-| 3 | **diagram-design** | 에디토리얼 HTML+SVG 다이어그램 | 도식 요청 시 |
-| 4 | **archify** | 인터랙티브 시스템 맵 (아키텍처 기본) | 시스템맵 요청 시 기본 |
+| 3–4 | **시각화 그룹** | §1.1 결정표로 스킬. 타입은 `references/viz-catalog.md` | 도식/차트 요청 시 |
+| 5 | **humanize-korean** | 기록용 한글 글·문서 AI 티 제거 | 기록물 필수 |
 
 전체 규칙: `plugins/hyeok-governance/GOVERNANCE.md`.
+
+### 시각화 그룹 — 스킬을 열기 전에 고른다
+
+한 산출물에 스킬 하나. 타입 상세는 `plugins/hyeok-governance/skills/hyeok-governance/references/viz-catalog.md`.
+
+| 먼저 이건가? | 스킬 |
+|---|---|
+| 표·CSV·KPI를 그래프로 | **lieflat-charts** *(벤더됨, PolyForm Noncommercial)* |
+| 시스템·인프라·런타임 맵 | **archify** |
+| 그 외 개념·프로세스 도식 | **diagram-design** |
+
+충돌: 시스템맵 archify > diagram. 수치 차트 lieflat only. 둘이면 파일 둘. 사용자가 스킬을 지정하면 그걸 따른다.
 
 ### 정직한 한계
 
@@ -137,6 +149,16 @@ Browser -> API -> Redis -> Postgres 시스템 맵
 
 ---
 
+
+# lieflat-charts
+
+정본: [larashero3-dotcom/lieflat-charts](https://github.com/larashero3-dotcom/lieflat-charts) (**PolyForm Noncommercial 1.0.0**, MIT 아님).  
+`plugins/lieflat-charts/` 벤더 — `SOURCE.md` 핀. `docs/` 에셋은 용량 때문에 생략, 템플릿·카탈로그만.
+
+수치 표 → HTML 차트 63형. 기본은 차트. 보고서는 명시 요청 시만.
+
+---
+
 # 표준 준수
 
 - **Claude**: `.claude-plugin/marketplace.json` + 플러그인별 `plugin.json`
@@ -149,3 +171,4 @@ Browser -> API -> Redis -> Postgres 시스템 맵
 - diagram-design: MIT (upstream Cathryn Lavery)
 - archify: MIT (upstream tt-a1i/archify)
 - humanize-korean: MIT (upstream epoko77-ai/im-not-ai)
+- lieflat-charts: PolyForm Noncommercial 1.0.0 (upstream larashero3-dotcom/lieflat-charts). MIT가 아님. 상업 재배포 금지.

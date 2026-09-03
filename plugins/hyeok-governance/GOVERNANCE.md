@@ -28,19 +28,37 @@ When it IS explicitly invoked: Typst syntax, Korean fonts (default **Pretendard*
 CJK typography, templates `/new`, `/new-report`, `/new-slide`, `/pdf`, and ask which font.
 
 **Layer 3 — diagram-design (editorial HTML+SVG diagrams).**
-When the user asks for a **diagram** that fits editorial types (architecture sketch,
+See **§1.1**. When the user asks for a **diagram** that fits editorial types (architecture sketch,
 flowchart, sequence, state, ER, timeline, swimlane, quadrant, nested, tree, org chart,
 layers, venn, pyramid) and does **not** need Archify's interactive system-map IR,
 use **diagram-design** (canonical skill from cathrynlavery/diagram-design).
 Standalone HTML + inline SVG. No Mermaid-slop unless the user asks for Mermaid/ASCII.
 
 **Layer 4 — archify (interactive system maps — DEFAULT for system/architecture maps).**
-When the user wants a **polished interactive system map** from a codebase or system
+See **§1.1**. When the user wants a **polished interactive system map** from a codebase or system
 description (runtime architecture, workflow, sequence with validation, data flow,
 lifecycle, before/after architecture delta), use **archify** (canonical skill from
 [tt-a1i/archify](https://github.com/tt-a1i/archify), shipped via hyeok-plugins).
 Typed JSON IR → validated HTML/SVG. Prefer Archify over inventing ad-hoc SVG or Mermaid
 for system-mapping asks. Cross-host skill dirs under `~/.claude|codex|agents|grok/skills/archify`.
+
+
+## 1.1 Visualization group — pick ONE skill before any draw tool
+
+These three are a **group**, not three defaults. Do not open a skill or call its
+tools until this table has named the skill. Type catalogs live outside this
+file so they are **not** session-injected: read
+`skills/hyeok-governance/references/viz-catalog.md` after this pick.
+
+| Intent | Skill |
+|---|---|
+| 표·CSV·KPI / “그래프로” | **lieflat-charts** |
+| 시스템·인프라·런타임 맵 | **archify** |
+| 그 외 개념·프로세스 도식 | **diagram-design** |
+
+**Collision (fixed):** system-map → archify > diagram-design. Numeric chart → lieflat only. Two intents → two files. **Exception:** user names a skill or type → honor that.
+
+**lieflat-charts** is vendored at `plugins/lieflat-charts` under **PolyForm Noncommercial 1.0.0** (not MIT). Missing skill → `./install.sh`. Fallback if still missing: diagram-design Bar/Line/Scatter, **one page**. Do not reimplement the 63 templates.
 
 **Layer 5 — humanize-korean / im-not-ai (recorded writing/docs — REQUIRED).**
 Applies when the task is to **author or polish a lasting Korean writing artifact**
@@ -58,12 +76,10 @@ Also skip for: pure code/diff, or when the user explicitly says to skip humanize
 
 - **ponytail**: ANY authoring/editing of executable or shippable code.
 - **typst-korean**: EXPLICIT Typst request only, OR editing `**/*.typ`.
-- **diagram-design**: editorial diagram types when Archify is not the better fit
-  (quick editorial chart, brand-styled one-pager without IR validation).
-- **archify**: system map / architecture from repo or description; interactive HTML;
-  workflow/sequence/data-flow/lifecycle with validation; architecture delta/compare.
-  Korean: 시스템 맵, 아키텍처 다이어그램, 런타임 구조, 시퀀스 맵, 데이터플로우.
-  **Default for system-architecture mapping.**
+- **Visualization group (§1.1)** — pick one skill, then types from `references/viz-catalog.md`:
+  - **archify**: system/architecture maps.
+  - **diagram-design**: editorial diagrams.
+  - **lieflat-charts** (vendored, Noncommercial): numeric HTML charts.
 - **humanize-korean (im-not-ai)**: REQUIRED for **recorded** Korean writing/docs
   (artifacts to keep or ship). **Not** for ordinary chat replies.
 
@@ -77,8 +93,9 @@ Installer/bootstrap and filesystem-mutating automation are EXEMPT from YAGNI.
 **typst-korean** does NOT govern executable source; never forces structure the user did
 not request.
 
-**diagram-design / archify**: do not invent Mermaid as the default. Archify owns
-validated system maps; diagram-design owns editorial HTML+SVG sketches.
+**diagram-design / archify / lieflat-charts**: do not invent Mermaid as the default.
+Pick the skill from §1.1, then the type from `references/viz-catalog.md`.
+lieflat-charts is vendored; license stays PolyForm Noncommercial — do not relicense as MIT.
 
 **humanize-korean**: governs Korean **prose style** only (AI-티 제거). Does not change
 facts, numbers, or claims. Does not replace typst-korean layout or diagram skills.
@@ -87,12 +104,11 @@ facts, numbers, or claims. Does not replace typst-korean layout or diagram skill
 
 1. **Substance beats style.**
 2. Executable/shippable code → ponytail. Document payload → typst-korean when invoked.
-3. System-architecture / interactive map intent → **archify** over diagram-design.
-4. Editorial one-off diagram without IR → diagram-design.
-5. Generic PDF/doc without Typst mention → do NOT auto-use Typst.
-6. Recorded Korean writing/doc artifact → **humanize-korean required** before handoff
+3. Viz collision: numeric → lieflat only; system-map → archify > diagram; two intents → two files. User-named skill/type wins.
+4. Generic PDF/doc without Typst mention → do NOT auto-use Typst.
+5. Recorded Korean writing/doc artifact → **humanize-korean required** before handoff
    (after substance is settled; style pass last). Chat replies are out of scope.
-7. **Intensity** → ponytail FULL default; honor explicit `/ponytail` settings.
+6. **Intensity** → ponytail FULL default; honor explicit `/ponytail` settings.
 
 ## 5. Intensity
 
@@ -103,6 +119,5 @@ facts, numbers, or claims. Does not replace typst-korean layout or diagram skill
 
 ponytail = **how much EXECUTABLE code you write**.
 typst-korean = **Korean Typst documents** (explicit only).
-diagram-design = **editorial HTML+SVG diagrams**.
-archify = **interactive validated system maps** (default for architecture/system mapping).
+viz group = **one of** archify (system maps) / diagram-design (editorial) / lieflat-charts (numeric, vendored Noncommercial).
 humanize-korean (im-not-ai) = **required** for recorded Korean writing/docs (not chat).

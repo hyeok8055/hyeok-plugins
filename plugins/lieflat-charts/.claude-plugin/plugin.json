@@ -1,0 +1,18 @@
+{
+  "name": "lieflat-charts",
+  "description": "Template-driven numeric HTML charts (63 types: Lupi / Basics / Glance / Maps / Interactive). Upstream PolyForm Noncommercial 1.0.0 — not MIT.",
+  "version": "1.0.0",
+  "author": {
+    "name": "moxt.ai / larashero3-dotcom"
+  },
+  "homepage": "https://github.com/larashero3-dotcom/lieflat-charts",
+  "repository": "https://github.com/larashero3-dotcom/lieflat-charts",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "keywords": [
+    "charts",
+    "visualization",
+    "html",
+    "lupi",
+    "noncommercial"
+  ]
+}

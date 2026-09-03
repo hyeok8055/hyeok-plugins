@@ -194,7 +194,7 @@ function Install-GovernanceSkill($govBody) {
     'name: hyeok-governance',
     'description: >',
     '  Task routing/priority — ponytail (code policy), typst-korean (Korean Typst docs, explicit only),',
-    '  diagram-design (editorial HTML+SVG), archify (interactive system maps),',
+    '  diagram-design (editorial HTML+SVG), archify (interactive system maps), lieflat-charts (numeric HTML, Noncommercial),',
 '  humanize-korean/im-not-ai (REQUIRED Korean prose for writing/docs).',
     '---',
     '',
@@ -222,7 +222,7 @@ function Install-CliPlugins {
         # Fallback: GitHub remote marketplace
         & claude plugin marketplace add hyeok8055/hyeok-plugins --scope user 2>&1 | Out-Null
       }
-      foreach ($p in @('hyeok-governance','typst-korean','diagram-design','archify','humanize-korean')) {
+      foreach ($p in @('hyeok-governance','typst-korean','diagram-design','archify','humanize-korean','lieflat-charts')) {
         $id = "${p}@${MarketName}"
         try {
           & claude plugin install $id -s user 2>&1 | Out-Null
@@ -254,7 +254,7 @@ function Install-CliPlugins {
       if ($LASTEXITCODE -ne 0) {
         & codex plugin marketplace add hyeok8055/hyeok-plugins --json 2>&1 | Out-Null
       }
-      foreach ($p in @('hyeok-governance','typst-korean','diagram-design','archify','humanize-korean')) {
+      foreach ($p in @('hyeok-governance','typst-korean','diagram-design','archify','humanize-korean','lieflat-charts')) {
         $id = "${p}@${MarketName}"
         $added = $false
         try {
@@ -298,7 +298,7 @@ function Install-CliPlugins {
     # marketplace add may fail if already configured — that is OK
     try { & grok plugin marketplace add $root 2>&1 | Out-Null } catch {}
     try { & grok plugin marketplace add hyeok8055/hyeok-plugins 2>&1 | Out-Null } catch {}
-    foreach ($rel in @('plugins\hyeok-governance','plugins\typst-korean','plugins\diagram-design','plugins\archify','plugins\humanize-korean')) {
+    foreach ($rel in @('plugins\hyeok-governance','plugins\typst-korean','plugins\diagram-design','plugins\archify','plugins\humanize-korean','plugins\lieflat-charts')) {
       $src = Join-Path $root $rel
       try {
         $out = & grok plugin install $src --trust 2>&1 | Out-String
@@ -332,6 +332,7 @@ $ArchifySkillDir = Join-Path $PSScriptRoot 'plugins\archify\skills\archify'
 $HumanizeSkillDir = Join-Path $PSScriptRoot 'plugins\humanize-korean\skills\humanize-korean'
 $HumanizeLightDir = Join-Path $PSScriptRoot 'plugins\humanize-korean\skills\humanize'
 $HumanizeRedoDir = Join-Path $PSScriptRoot 'plugins\humanize-korean\skills\humanize-redo'
+$LieflatSkillDir = Join-Path $PSScriptRoot 'plugins\lieflat-charts\skills\lieflat-charts'
 
 # ---- host detection ----
 function Have($name, $dir) {
@@ -359,6 +360,8 @@ if (Test-Path $HumanizeSkillDir) { Install-SkillTree 'humanize-korean' $Humanize
 else { Warn "humanize-korean skill missing at $HumanizeSkillDir" }
 if (Test-Path $HumanizeLightDir) { Install-SkillTree 'humanize' $HumanizeLightDir 'upstream:epoko77-ai/im-not-ai' }
 # humanize-redo vendored but not auto-installed
+if (Test-Path $LieflatSkillDir) { Install-SkillTree 'lieflat-charts' $LieflatSkillDir 'upstream:larashero3-dotcom/lieflat-charts' }
+else { Warn "lieflat-charts skill missing at $LieflatSkillDir" }
 
 # ---- Claude flag + hook smoke ----
 if ($script:hasClaude) {
