@@ -43,116 +43,22 @@ Typed JSON IR → validated HTML/SVG. Prefer Archify over inventing ad-hoc SVG o
 for system-mapping asks. Cross-host skill dirs under `~/.claude|codex|agents|grok/skills/archify`.
 
 
-## 1.1 Visualization group — pick ONE skill, then ONE type, **before any draw tool**
+## 1.1 Visualization group — pick ONE skill before any draw tool
 
 These three are a **group**, not three defaults. Do not open a skill or call its
-tools until this section has named both **skill** and **type**. Do not mix
-skills in a single deliverable. Split mixed asks into two artifacts.
+tools until this table has named the skill. Type catalogs live outside this
+file so they are **not** session-injected: read
+`skills/hyeok-governance/references/viz-catalog.md` after this pick.
 
-**Decision order (one pass):**
-1. Numeric table / CSV / KPI / “그래프로 보여줘” → **lieflat-charts** (external).
-   If not installed: tell the user to install it, or fall back to diagram-design
-   **Bar / Line / Scatter only** (diagram-grade, not a dashboard).
-2. System / codebase / infra / cloud-security topology / validated runtime map → **archify**.
-3. Everything else conceptual / process / editorial → **diagram-design**.
-4. Tie-break: system-map intent → archify > diagram-design. Numeric charts → lieflat only.
-   One request, two intents → **two files**, one skill each.
-
-| Intent cue | Skill | In tree? |
-|---|---|---|
-| 시스템맵, 아키텍처, 인프라, 런타임, 시퀀스/데이터플로우 IR | **archify** | yes (MIT) |
-| 플로우·ER·여정·UML·개념 도식 | **diagram-design** | yes (MIT) |
-| 표·수치 → 편집 HTML 차트/리포트 | **lieflat-charts** | **no** — PolyForm Noncommercial. https://github.com/larashero3-dotcom/lieflat-charts |
-
-### archify — 5 IR types (pick exactly one)
-
-Read only the matching schema after this pick. Do not invent Mermaid/SVG for these.
-
-| Type | Use when showing… | Cue |
-|---|---|---|
-| `architecture` | Components, services, cloud/security boundaries, infrastructure | 시스템맵, 토폴로지, 컴포넌트 |
-| `workflow` | Processes, approval gates, tool calls, runbooks, CI/CD | 워크플로, 런북, 승인 |
-| `sequence` | API call chains, request lifecycles, async traces, returns | API 시퀀스, 호출 사슬 |
-| `dataflow` | Pipelines, ETL/ELT, lineage, governance, consumers | 파이프라인, 리니지 |
-| `lifecycle` | State/status transitions, retries, waiting and terminal states | 상태머신, 라이프사이클 |
-
-Mermaid in: flowchart/graph → `workflow` (or `architecture` if component map);
-`sequenceDiagram` → `sequence`; `stateDiagram` → `lifecycle`.
-
-### diagram-design — 39 visual types (pick exactly one)
-
-Load `references/type-*.md` for the chosen type only. Prefer this over archify when
-the ask is editorial/conceptual, not a validated system IR.
-
-**Structure / system (prefer archify if it is a real runtime map)**
-- Architecture · IT current-state · High-Level · Deployment · DP integration · DP security matrix · Layer stack · Nested
-
-**Process / time**
-- Flowchart · Sequence · State machine · Swimlane · Process · Timeline · Gantt · Kanban · User journey · Story map
-
-**Data model**
-- ER / data model · Database schema · UML class · Data flow · Medallion
-
-**Hierarchy / sets**
-- Tree · Org chart · Venn · Pyramid / funnel · Treemap · Loop / flywheel
-
-**Position / analysis**
-- Quadrant · Radar / spider · Polar · Wardley map · Fishbone · Sankey · Dependency graph
-
-**Quantitative (diagram-grade only — real measured series go to lieflat)**
-- Bar · Line (incl. slope / ridgeline / bump) · Scatter (incl. bubble / beeswarm)
-
-Do **not** use for unicode sketches, bullet lists, or one-shape “diagrams”.
-
-### lieflat-charts — 63 templates (external; pick by **data shape**)
-
-Not vendored. If the skill is missing, stop and give the install URL — do not
-reimplement 63 types in diagram-design.
-
-**Output mode:** default = **chart**. Report templates R01–R12 only when the user
-explicitly asks 보고서/연보/월보/화이트페이퍼/포스터/brief/notebook.
-
-**Family priority:** Lupi Editorial (L) → Lupi Basics (F) → Glance (G).
-Glance only if L+F cannot encode the data, or the user asks dashboard / 3-second read.
-Maps (M) and Interactive (B) **only if asked**.
-
-Main roster L1–L15 + F1–F13. Backup L16–L20 / F14–F17 / G19–G22 only when the main
-set cannot encode honestly — except these shapes, which skip straight to backup:
-OHLC → F17; box+outliers → F15; 3–6 continuous dims/entity → L20;
-year calendar 52×7 → L17; stacked composition over continuous time → F16.
-
-| Data shape | First candidates |
+| Intent | Skill |
 |---|---|
-| Few-category compare (≤8) | F1 Rung Bars / F5 Tick Rows / L2 Dot Cascade (G3 if Glance) |
-| Multi-select % (items independent) | L15 Ballot Tally / G3 |
-| 100% composition | F4 Tick Donut / L14 Hundred Field / G4 Dot Waffle |
-| Stacked composition by category | F7 Stacked Rungs |
-| Signed +/- categories | G10 Diverging Bar |
-| Before/after per category | F12 Dumbbell / F6 Paired Rungs |
-| Daily series ≤30d | F2 Hairline Line |
-| Daily series 30–90d | F3 Hairline Area / L3 Barcode Lollipop |
-| Funnel / stage drop-off | L13 Hourglass Stream |
-| Waterfall / P&L bridge | F9 Rung Waterfall |
-| Single progress 0–100 | F11 Tick Gauge |
-| 2-D scatter ≤20 | F8 Plumb Scatter |
-| Histogram / binned counts | F14 Rung Histogram |
-| Grouped distribution | F15 Tick Box / G15 Jitter / G19 Violin |
-| Matrix category×category | L4 Arc Matrix / L9 Almanac (backup L16 / G20) |
-| Week×hour load | F10 Dot Heat / G14 Single Axis |
-| Many-to-one membership | L5 Radial Convergence / L12 Type Colonnade |
-| Hierarchy + share | F13 Nested Treemap (relation-only → G7 Tree LR) |
-| Network | ≤15: G6/G11; larger / inspect: B1 circular / B2 force; paths: B3 Threads |
-| Rank over discrete time | L11 Trend Lineage / G21 Rank Strip (race: G16) |
-| Event lifetime | L11 Trend Lineage |
-| Birth-time + current size | L1 Launch Fan |
-| Bipolar scale | L7 Brand Spectrum |
-| Choropleth | M1 US / M2 World — **only if user asked for a map** |
+| 표·CSV·KPI / “그래프로” | **lieflat-charts** (external) |
+| 시스템·인프라·런타임 맵 | **archify** |
+| 그 외 개념·프로세스 도식 | **diagram-design** |
 
-Glance extras (dashboard / motion): G5 pictorial bar, G8 dual-area, G9 scatter morph,
-G12 stagger wave, G13 dual-encode pie, G16 bar race, G17 live stream, G18 draw-in counter,
-G22 aggregate Sankey.
+**Collision (fixed):** system-map → archify > diagram-design. Numeric chart → lieflat only. Two intents → two files. **Exception:** user names a skill or type → honor that.
 
-Do **not** use lieflat for architecture / flowchart / ER / UML / journey maps.
+**lieflat-charts** is **not vendored** (PolyForm Noncommercial). Missing install → give https://github.com/larashero3-dotcom/lieflat-charts, or diagram-design Bar/Line/Scatter only (not a dashboard).
 
 **Layer 5 — humanize-korean / im-not-ai (recorded writing/docs — REQUIRED).**
 Applies when the task is to **author or polish a lasting Korean writing artifact**
@@ -170,10 +76,10 @@ Also skip for: pure code/diff, or when the user explicitly says to skip humanize
 
 - **ponytail**: ANY authoring/editing of executable or shippable code.
 - **typst-korean**: EXPLICIT Typst request only, OR editing `**/*.typ`.
-- **Visualization group (§1.1)** — pick one:
-  - **archify**: system/architecture maps (IR). Korean: 시스템맵, 아키텍처, 런타임, 시퀀스/데이터플로우.
-  - **diagram-design**: editorial HTML+SVG diagrams (flow, ER, timeline, …).
-  - **lieflat-charts** (external): numeric data → HTML charts. Not vendored (Noncommercial).
+- **Visualization group (§1.1)** — pick one skill, then types from `references/viz-catalog.md`:
+  - **archify**: system/architecture maps.
+  - **diagram-design**: editorial diagrams.
+  - **lieflat-charts** (external, Noncommercial): numeric HTML charts.
 - **humanize-korean (im-not-ai)**: REQUIRED for **recorded** Korean writing/docs
   (artifacts to keep or ship). **Not** for ordinary chat replies.
 
@@ -188,9 +94,8 @@ Installer/bootstrap and filesystem-mutating automation are EXEMPT from YAGNI.
 not request.
 
 **diagram-design / archify / lieflat-charts**: do not invent Mermaid as the default.
-Archify owns validated system maps (5 IR types). diagram-design owns editorial
-HTML+SVG (39 types). lieflat-charts (external) owns numeric HTML charts (63 types).
-Pick skill+type from §1.1 **before** opening any of those skills.
+Pick the skill from §1.1, then the type from `references/viz-catalog.md`.
+lieflat-charts is external (PolyForm Noncommercial) — never copy it into this repo.
 
 **humanize-korean**: governs Korean **prose style** only (AI-티 제거). Does not change
 facts, numbers, or claims. Does not replace typst-korean layout or diagram skills.
@@ -199,13 +104,11 @@ facts, numbers, or claims. Does not replace typst-korean layout or diagram skill
 
 1. **Substance beats style.**
 2. Executable/shippable code → ponytail. Document payload → typst-korean when invoked.
-3. Numeric table/CSV/KPI chart → **lieflat-charts** (external); never archify/diagram IR.
-4. System-architecture / interactive map intent → **archify** over diagram-design.
-5. Editorial one-off diagram without IR → diagram-design.
-6. Generic PDF/doc without Typst mention → do NOT auto-use Typst.
-7. Recorded Korean writing/doc artifact → **humanize-korean required** before handoff
+3. Viz collision: numeric → lieflat only; system-map → archify > diagram; two intents → two files. User-named skill/type wins.
+4. Generic PDF/doc without Typst mention → do NOT auto-use Typst.
+5. Recorded Korean writing/doc artifact → **humanize-korean required** before handoff
    (after substance is settled; style pass last). Chat replies are out of scope.
-8. **Intensity** → ponytail FULL default; honor explicit `/ponytail` settings.
+6. **Intensity** → ponytail FULL default; honor explicit `/ponytail` settings.
 
 ## 5. Intensity
 
@@ -216,6 +119,5 @@ facts, numbers, or claims. Does not replace typst-korean layout or diagram skill
 
 ponytail = **how much EXECUTABLE code you write**.
 typst-korean = **Korean Typst documents** (explicit only).
-diagram-design = **editorial HTML+SVG diagrams**.
-archify = **interactive validated system maps** (default for architecture/system mapping).
+viz group = **one of** archify (system maps) / diagram-design (editorial) / lieflat-charts (numeric, external Noncommercial).
 humanize-korean (im-not-ai) = **required** for recorded Korean writing/docs (not chat).
