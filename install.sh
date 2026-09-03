@@ -40,6 +40,7 @@ ARCHIFY_DIR="$SCRIPT_DIR/plugins/archify/skills/archify"
 HUMANIZE_DIR="$SCRIPT_DIR/plugins/humanize-korean/skills/humanize-korean"
 HUMANIZE_LIGHT_DIR="$SCRIPT_DIR/plugins/humanize-korean/skills/humanize"
 HUMANIZE_REDO_DIR="$SCRIPT_DIR/plugins/humanize-korean/skills/humanize-redo"
+LIEFLAT_DIR="$SCRIPT_DIR/plugins/lieflat-charts/skills/lieflat-charts"
 [ -f "$GOV" ] || { echo "[hyeok] ERROR: GOVERNANCE.md not found at $GOV — run from repo root."; exit 1; }
 
 info() { echo "[hyeok] $1"; }
@@ -148,6 +149,7 @@ name: hyeok-governance
 description: >
   Task routing/priority — ponytail (code policy), typst-korean (Korean Typst docs, explicit only),
   diagram-design (editorial HTML+SVG), archify (interactive system maps),
+  lieflat-charts (numeric HTML charts, PolyForm Noncommercial),
   humanize-korean/im-not-ai (REQUIRED Korean prose humanizer for writing/docs).
 ---
 
@@ -165,7 +167,7 @@ install_cli_plugins() {
     if ! claude plugin marketplace add "$SCRIPT_DIR" --scope user >/dev/null 2>&1; then
       claude plugin marketplace add hyeok8055/hyeok-plugins --scope user >/dev/null 2>&1 || true
     fi
-    for p in hyeok-governance typst-korean diagram-design archify humanize-korean; do
+    for p in hyeok-governance typst-korean diagram-design archify humanize-korean lieflat-charts; do
       if claude plugin install "${p}@${MARKET}" -s user >/dev/null 2>&1; then
         info "Claude plugin installed: ${p}@${MARKET} (user)"
       else
@@ -180,7 +182,7 @@ install_cli_plugins() {
     if ! codex plugin marketplace add "$SCRIPT_DIR" --json >/dev/null 2>&1; then
       codex plugin marketplace add hyeok8055/hyeok-plugins --json >/dev/null 2>&1 || true
     fi
-    for p in hyeok-governance typst-korean diagram-design archify humanize-korean; do
+    for p in hyeok-governance typst-korean diagram-design archify humanize-korean lieflat-charts; do
       if codex plugin add "${p}@${MARKET}" --json >/dev/null 2>&1; then
         info "Codex plugin installed: ${p}@${MARKET}"
       elif codex plugin add "$p" --marketplace "$MARKET" --json >/dev/null 2>&1; then
@@ -197,7 +199,7 @@ install_cli_plugins() {
     if ! grok plugin marketplace add "$SCRIPT_DIR" >/dev/null 2>&1; then
       grok plugin marketplace add hyeok8055/hyeok-plugins >/dev/null 2>&1 || true
     fi
-    for rel in plugins/hyeok-governance plugins/typst-korean plugins/diagram-design plugins/archify plugins/humanize-korean; do
+    for rel in plugins/hyeok-governance plugins/typst-korean plugins/diagram-design plugins/archify plugins/humanize-korean plugins/lieflat-charts; do
       src="$SCRIPT_DIR/$rel"
       if grok plugin install "$src" --trust >/dev/null 2>&1; then
         info "Grok plugin installed: $src"
@@ -231,6 +233,7 @@ install_governance_skill
 [ -d "$HUMANIZE_DIR" ] && install_skill_tree humanize-korean "$HUMANIZE_DIR" "upstream:epoko77-ai/im-not-ai" || warn "humanize-korean skill missing"
 [ -d "$HUMANIZE_LIGHT_DIR" ] && install_skill_tree humanize "$HUMANIZE_LIGHT_DIR" "upstream:epoko77-ai/im-not-ai" || true
 # humanize-redo: vendored but not auto-installed (wrapper only; prefer humanize-korean re-run)
+[ -d "$LIEFLAT_DIR" ] && install_skill_tree lieflat-charts "$LIEFLAT_DIR" "upstream:larashero3-dotcom/lieflat-charts" || warn "lieflat-charts skill missing"
 
 # ---- Claude ----
 if [ "$has_claude" = 1 ]; then

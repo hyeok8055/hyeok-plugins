@@ -15,7 +15,7 @@ const path = require("path");
 const ONELINER =
   "[hyeok-governance] Standing orders: ponytail = minimal-but-not-negligent on executable/shippable code. " +
   "typst-korean = Typst docs on EXPLICIT request only (not default for generic PDF/장표/보고서). " +
-  "viz group: archify=system maps, diagram-design=editorial diagrams, lieflat-charts(external, Noncommercial)=numeric charts. Pick one; user-named skill wins. " +
+  "viz group: archify=system maps, diagram-design=editorial diagrams, lieflat-charts(vendored, Noncommercial)=numeric charts. Pick one; user-named skill wins. " +
   "humanize-korean (im-not-ai) = REQUIRED for recorded Korean writing/docs (not chat replies; skip if user says so). " +
   "Substance > style. NEVER compress code blocks, files-on-disk, commit/PR text, security analysis, " +
   "document content, or mandated clarifying questions. No hard gates — comply by intent.";

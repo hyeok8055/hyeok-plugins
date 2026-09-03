@@ -52,11 +52,12 @@ Do **not** use for unicode sketches, bullet lists, or one-shape “diagrams”.
 
 ---
 
-## lieflat-charts — 63 templates (external)
+## lieflat-charts — 63 templates (vendored)
 
-Not vendored. License: **PolyForm Noncommercial 1.0**.
-Install: https://github.com/larashero3-dotcom/lieflat-charts
-If missing: stop and give that URL — do not reimplement 63 types in diagram-design.
+Vendored at `plugins/lieflat-charts`. License: **PolyForm Noncommercial 1.0.0** (not MIT).
+Upstream: https://github.com/larashero3-dotcom/lieflat-charts
+If the skill is missing: `./install.sh`. Do not reimplement 63 types in diagram-design.
+Fallback without the skill: diagram-design Bar/Line/Scatter, one page only.
 
 **Output mode:** default = **chart**. Report templates R01–R12 only when the user
 explicitly asks 보고서/연보/월보/화이트페이퍼/포스터/brief/notebook.

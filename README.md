@@ -95,7 +95,7 @@ grok plugin list
 
 | 먼저 이건가? | 스킬 |
 |---|---|
-| 표·CSV·KPI를 그래프로 | **lieflat-charts** *(벤더 안 함, PolyForm Noncommercial)* https://github.com/larashero3-dotcom/lieflat-charts |
+| 표·CSV·KPI를 그래프로 | **lieflat-charts** *(벤더됨, PolyForm Noncommercial)* |
 | 시스템·인프라·런타임 맵 | **archify** |
 | 그 외 개념·프로세스 도식 | **diagram-design** |
 
@@ -149,6 +149,16 @@ Browser -> API -> Redis -> Postgres 시스템 맵
 
 ---
 
+
+# lieflat-charts
+
+정본: [larashero3-dotcom/lieflat-charts](https://github.com/larashero3-dotcom/lieflat-charts) (**PolyForm Noncommercial 1.0.0**, MIT 아님).  
+`plugins/lieflat-charts/` 벤더 — `SOURCE.md` 핀. `docs/` 에셋은 용량 때문에 생략, 템플릿·카탈로그만.
+
+수치 표 → HTML 차트 63형. 기본은 차트. 보고서는 명시 요청 시만.
+
+---
+
 # 표준 준수
 
 - **Claude**: `.claude-plugin/marketplace.json` + 플러그인별 `plugin.json`
@@ -161,4 +171,4 @@ Browser -> API -> Redis -> Postgres 시스템 맵
 - diagram-design: MIT (upstream Cathryn Lavery)
 - archify: MIT (upstream tt-a1i/archify)
 - humanize-korean: MIT (upstream epoko77-ai/im-not-ai)
-- lieflat-charts: **not in this repo**. Upstream PolyForm Noncommercial 1.0.0 — commercial redistribute 금지. 별도 설치.
+- lieflat-charts: PolyForm Noncommercial 1.0.0 (upstream larashero3-dotcom/lieflat-charts). MIT가 아님. 상업 재배포 금지.

@@ -52,13 +52,13 @@ file so they are **not** session-injected: read
 
 | Intent | Skill |
 |---|---|
-| 표·CSV·KPI / “그래프로” | **lieflat-charts** (external) |
+| 표·CSV·KPI / “그래프로” | **lieflat-charts** |
 | 시스템·인프라·런타임 맵 | **archify** |
 | 그 외 개념·프로세스 도식 | **diagram-design** |
 
 **Collision (fixed):** system-map → archify > diagram-design. Numeric chart → lieflat only. Two intents → two files. **Exception:** user names a skill or type → honor that.
 
-**lieflat-charts** is **not vendored** (PolyForm Noncommercial). Missing install → give https://github.com/larashero3-dotcom/lieflat-charts, or diagram-design Bar/Line/Scatter only (not a dashboard).
+**lieflat-charts** is vendored at `plugins/lieflat-charts` under **PolyForm Noncommercial 1.0.0** (not MIT). Missing skill → `./install.sh`. Fallback if still missing: diagram-design Bar/Line/Scatter, **one page**. Do not reimplement the 63 templates.
 
 **Layer 5 — humanize-korean / im-not-ai (recorded writing/docs — REQUIRED).**
 Applies when the task is to **author or polish a lasting Korean writing artifact**
@@ -79,7 +79,7 @@ Also skip for: pure code/diff, or when the user explicitly says to skip humanize
 - **Visualization group (§1.1)** — pick one skill, then types from `references/viz-catalog.md`:
   - **archify**: system/architecture maps.
   - **diagram-design**: editorial diagrams.
-  - **lieflat-charts** (external, Noncommercial): numeric HTML charts.
+  - **lieflat-charts** (vendored, Noncommercial): numeric HTML charts.
 - **humanize-korean (im-not-ai)**: REQUIRED for **recorded** Korean writing/docs
   (artifacts to keep or ship). **Not** for ordinary chat replies.
 
@@ -95,7 +95,7 @@ not request.
 
 **diagram-design / archify / lieflat-charts**: do not invent Mermaid as the default.
 Pick the skill from §1.1, then the type from `references/viz-catalog.md`.
-lieflat-charts is external (PolyForm Noncommercial) — never copy it into this repo.
+lieflat-charts is vendored; license stays PolyForm Noncommercial — do not relicense as MIT.
 
 **humanize-korean**: governs Korean **prose style** only (AI-티 제거). Does not change
 facts, numbers, or claims. Does not replace typst-korean layout or diagram skills.
@@ -119,5 +119,5 @@ facts, numbers, or claims. Does not replace typst-korean layout or diagram skill
 
 ponytail = **how much EXECUTABLE code you write**.
 typst-korean = **Korean Typst documents** (explicit only).
-viz group = **one of** archify (system maps) / diagram-design (editorial) / lieflat-charts (numeric, external Noncommercial).
+viz group = **one of** archify (system maps) / diagram-design (editorial) / lieflat-charts (numeric, vendored Noncommercial).
 humanize-korean (im-not-ai) = **required** for recorded Korean writing/docs (not chat).
