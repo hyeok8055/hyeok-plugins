@@ -1,6 +1,6 @@
 {
   "name": "hyeok-governance",
-  "version": "1.4.1",
+  "version": "1.4.3",
   "description": "크로스호스트 에이전트 거버넌스 - ponytail · typst-korean · diagram-design · archify · humanize-korean(im-not-ai) 우선순위·역할 분배. Claude Code / Codex CLI / Grok Build.",
   "author": {
     "name": "hyeok8055",

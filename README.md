@@ -84,10 +84,39 @@ grok plugin list
 |------|------|---------|------|
 | 1 | **ponytail** | **실행·배포 코드** 양 (최소-단 부실 금지) | FULL |
 | 2 | **typst-korean** | Typst 한글 문서 (**명시 요청 시만**) | 옵트인 |
-| 3 | **diagram-design** | 에디토리얼 HTML+SVG 다이어그램 | 도식 요청 시 |
-| 4 | **archify** | 인터랙티브 시스템 맵 (아키텍처 기본) | 시스템맵 요청 시 기본 |
+| 3–4 | **시각화 그룹** | 도구 호출 전 스킬+타입 선택. 아래 표 + `GOVERNANCE.md` §1.1 | 도식/차트 요청 시 |
+| 5 | **humanize-korean** | 기록용 한글 글·문서 AI 티 제거 | 기록물 필수 |
 
 전체 규칙: `plugins/hyeok-governance/GOVERNANCE.md`.
+
+### 시각화 그룹 — 스킬을 열기 전에 고른다
+
+한 산출물에 스킬 하나. 섞이면 파일 두 개.
+
+| 먼저 이건가? | 스킬 | 고를 타입 |
+|---|---|---|
+| 표·CSV·KPI를 그래프로 | **lieflat-charts** *(벤더 안 함)* | 데이터 형상 → 63형. 기본 차트. 라이선스 **PolyForm Noncommercial**. 설치: https://github.com/larashero3-dotcom/lieflat-charts |
+| 시스템·인프라·런타임 맵 | **archify** | `architecture` · `workflow` · `sequence` · `dataflow` · `lifecycle` |
+| 그 외 개념·프로세스 도식 | **diagram-design** | 39형: 플로우/시퀀스/상태/ER/타임라인/스윔레인/쿼드런트/트리/조직도/레이어/벤/피라미드/간트/여정/UML/칸반/생키/워드리… |
+
+**archify (5)**
+- architecture: 컴포넌트·클라우드/보안 경계·인프라
+- workflow: 프로세스·승인·런북·CI/CD
+- sequence: API 호출 사슬·요청 라이프사이클
+- dataflow: 파이프라인·ETL·리니지
+- lifecycle: 상태 전이·재시도·종료
+
+**diagram-design (39)** — 구조(Architecture, IT current-state, High-Level, Deployment, DP integration/security, Layer stack, Nested) · 프로세스(Flowchart, Sequence, State, Swimlane, Process, Timeline, Gantt, Kanban, Journey, Story map) · 데이터모델(ER, DB schema, UML class, Data flow, Medallion) · 계층/집합(Tree, Org, Venn, Pyramid, Treemap, Loop) · 분석(Quadrant, Radar, Polar, Wardley, Fishbone, Sankey, Dependency) · 도식용 막대/선/산점(실측 대시보드는 lieflat)
+
+**lieflat-charts (63, 외부)** — 우선순위 Editorial(L) → Basics(F) → Glance(G). 지도/네트워크 대형은 명시 요청만.
+- 소분류 비교 → F1/F5/L2
+- 구성비 → F4/L14/G4
+- 시계열 → F2/F3/L3
+- 분포 → F14/F15/G19
+- 네트워크 → G6/B1/B2
+- 지도 → M1/M2 (요청 시에만)
+
+겹침: 시스템맵 archify > diagram. 수치 차트 lieflat only. 설치 안 됐으면 URL 안내하거나 diagram Bar/Line만.
 
 ### 정직한 한계
 
@@ -149,3 +178,4 @@ Browser -> API -> Redis -> Postgres 시스템 맵
 - diagram-design: MIT (upstream Cathryn Lavery)
 - archify: MIT (upstream tt-a1i/archify)
 - humanize-korean: MIT (upstream epoko77-ai/im-not-ai)
+- lieflat-charts: **not in this repo**. Upstream PolyForm Noncommercial 1.0.0 — commercial redistribute 금지. 별도 설치.
