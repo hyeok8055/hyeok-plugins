@@ -2,7 +2,8 @@
 name: typst-korean
 description: Typst로 한글 문서를 작성할 때 쓴다. 사용자가 typst를 명시적으로 요청했거나(예 "typst로 PDF 만들어", "typst-korean으로"), .typ 파일을 작업할 때만 활성화한다. 폰트(기본값 Pretendard)·CJK 타이포그래피·페이지 레이아웃을 설정. 트리거 - typst, .typ, "typst로 만들어". 단순 "PDF/장표/보고서 만들어줘"(typst 언급 없음)에는 자동으로 쓰지 않는다 — typst는 옵트인, 기본 문서 도구 아님. 코드 작업은 ponytail 담당.
 allowed-tools: Read, Write, Edit, Bash, Glob
-file-patterns: ["**/*.typ"]
+metadata:
+  file-patterns: ["**/*.typ"]
 ---
 
 # Typst Korean - 한글 문서 작성 지원

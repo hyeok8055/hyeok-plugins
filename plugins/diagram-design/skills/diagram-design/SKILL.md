@@ -8,6 +8,16 @@ metadata:
 
 # Diagram Design
 
+## Codex execution context
+
+Use tools available in the current session. Organizer restrictions take precedence over
+onboarding, browser capture, and export instructions below. When Computer Use is forbidden,
+use permitted static generation and CLI checks; leave browser inspection to the user and
+report it as unverified. Do not send task files to external services or upgrade provided tools.
+For style setup, reuse an established project style or the user's earlier choice. In an
+unbranded project, use the shipped defaults unless the user asks for customization. Ask only
+when a missing brand decision materially affects the requested output; do not repeat a choice.
+
 Create visual diagrams as self-contained HTML files with inline SVG and CSS, following an opinionated editorial design system.
 
 Thirty-nine visual types. Semantic patterns describe behavior independently; type references describe layout. Details load from `references/` only when selected.

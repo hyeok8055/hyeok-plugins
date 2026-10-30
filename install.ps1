@@ -1,413 +1,328 @@
 <#
 .SYNOPSIS
-  hyeok-plugins cross-host installer (Windows / PowerShell 5.1+).
-
-  User-scope install for Claude Code, Codex CLI, and Grok Build:
-    1) skill trees → host skill dirs (~/.claude|~/.codex|~/.grok|~/.agents/skills)
-    2) official CLI plugin marketplace + install when the host CLI is present
-    3) governance merge (Codex AGENTS.md), ponytail defaultMode pin
-
-  Guarantees: merge-safe, idempotent, fail-open, NO global env vars (no setx).
-
-
+  Install hyeok skills for Codex (PowerShell 5.1+).
+.DESCRIPTION
+  Default standalone skills mode: copy complete skill trees to ~/.agents/skills,
+  then merge a small governance bootstrap into the active Codex AGENTS file.
+  Do not also enable these skills through the Codex Plugins UI. The installer
+  does not install fonts or change model/provider/auth/MCP
+  configuration. Existing unrelated files are retained; changed files are
+  backed up outside skill discovery, under ~/.hyeok/backups/.
+  Legacy duplicate skills in ~/.codex/skills must be resolved before installing.
+  -Mode plugins uses the official Codex plugin CLI instead of copying skills
+  or writing a bootstrap. Only plugin/marketplace settings are managed by it.
+  Sources: https://learn.chatgpt.com/docs/build-skills
+           https://learn.chatgpt.com/docs/agent-configuration/agents-md
+.PARAMETER TargetHome
+  An existing home directory. When supplied, both skill and bootstrap writes
+  stay in this directory; CODEX_HOME is ignored for an isolated installation.
+  Otherwise use the current home and respect CODEX_HOME for the bootstrap.
+.PARAMETER Mode
+  skills (default) or plugins. These installation modes are mutually exclusive.
 .PARAMETER SkipCliPlugins
-  Skip `claude|codex|grok plugin ...` calls; still install skill trees + configs.
-
-.PARAMETER PonytailMode Default: full
+  Compatibility switch. Use with skills mode only.
+.PARAMETER SkipFonts
+  Compatibility switch. Font installation is always disabled.
+.PARAMETER PonytailMode
+  Compatibility option. Accepted without changing any tool configuration.
+.EXAMPLE
+  ./install.ps1 -TargetHome C:\Temp\codex-install-test
 #>
 [CmdletBinding()]
 param(
+  [string]$TargetHome,
+  [ValidateSet('skills','plugins')]
+  [string]$Mode = 'skills',
   [switch]$SkipCliPlugins,
   [switch]$SkipFonts,
   [ValidateSet('off','lite','full','ultra','wenyan-lite','wenyan','wenyan-full','wenyan-ultra')]
-  [ValidateSet('off','lite','full','ultra')]
-  [string]$PonytailMode = 'full'
+  [string]$PonytailMode
 )
 
 $ErrorActionPreference = 'Stop'
-$BEGIN  = '<!-- BEGIN hyeok-gov -->'
-$END    = '<!-- END hyeok-gov -->'
-$IS_TAG  = 'v0.8.2'
-$MARKER  = '.hyeok-installed'
-$Home_   = $env:USERPROFILE
-$Touched = New-Object System.Collections.ArrayList
-$MarketName = 'hyeok-plugins'
+$BeginTag = '<!-- BEGIN hyeok-gov -->'
+$EndTag = '<!-- END hyeok-gov -->'
+$Marker = '.hyeok-installed'
+$ChangedFiles = 0
+$BackupRoot = $null
 
-function Info($m)  { Write-Host "[hyeok] $m" }
-function Warn($m)  { Write-Host "[hyeok] WARN: $m" -ForegroundColor Yellow }
-function Note($p)  { [void]$Touched.Add($p) }
+function Info([string]$Message) { Write-Host "[hyeok] $Message" }
 
-function Write-NoBom($path, $text) {
-  $dir = Split-Path -Parent $path
-  if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
-  [System.IO.File]::WriteAllText($path, $text, (New-Object System.Text.UTF8Encoding($false)))
+function Get-ContentHash([string]$Path) {
+  $hash = [System.Security.Cryptography.SHA256]::Create()
+  $stream = [System.IO.File]::OpenRead($Path)
+  try { return [BitConverter]::ToString($hash.ComputeHash($stream)) }
+  finally { $stream.Dispose(); $hash.Dispose() }
 }
 
-function Config-Dir($tool) {
-  if ($env:XDG_CONFIG_HOME) { return (Join-Path $env:XDG_CONFIG_HOME $tool) }
-  $base = $env:APPDATA; if (-not $base) { $base = Join-Path $Home_ 'AppData\Roaming' }
-  return (Join-Path $base $tool)
+function Assert-PlainPath([string]$Path) {
+  $candidate = [System.IO.Path]::GetFullPath($Path)
+  while ($candidate) {
+    $item = Get-Item -LiteralPath $candidate -Force -ErrorAction SilentlyContinue
+    if ($null -ne $item) {
+      if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
+        throw "Refusing a symlink or junction in install path: $candidate"
+      }
+    }
+    $candidate = Split-Path -Parent $candidate
+  }
 }
 
-function Set-DefaultMode($tool, $mode) {
-  $path = Join-Path (Config-Dir $tool) 'config.json'
-  $obj = $null
-  if (Test-Path $path) {
-    try { $obj = Get-Content -Raw -Path $path | ConvertFrom-Json } catch {
-      Copy-Item $path "$path.pre-hyeok.bak" -Force
-      Warn "$tool config.json unparseable; backed up"
-      $obj = $null
+function Assert-PlainTree([string]$Path) {
+  Assert-PlainPath $Path
+  if (Test-Path -LiteralPath $Path -PathType Container) {
+    foreach ($item in Get-ChildItem -LiteralPath $Path -Force) {
+      if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
+        throw "Refusing a symlink or junction in skill tree: $($item.FullName)"
+      }
+      if ($item.PSIsContainer) { Assert-PlainTree $item.FullName }
     }
   }
-  if ($null -eq $obj) { $obj = [PSCustomObject]@{} }
-  $obj | Add-Member -NotePropertyName 'defaultMode' -NotePropertyValue $mode -Force
-  Write-NoBom $path (($obj | ConvertTo-Json -Depth 20))
-  Note $path
-  try {
-    $check = (Get-Content -Raw -Path $path | ConvertFrom-Json).defaultMode
-    if ($check -ne $mode) { Warn "$tool defaultMode verify mismatch: got '$check'" }
-    else { Info "$tool defaultMode=$mode  ($path)" }
-  } catch { Warn "$tool config re-read failed" }
 }
 
-function Merge-Sentinel($path, $body, $begin, $end) {
-  if (-not $begin) { $begin = $BEGIN; $end = $END }
-  if ($null -eq $body) { $body = '' }
-  $block = "$begin`n$body`n$end"
-  $content = ''
-  if (Test-Path $path) {
-    $raw = Get-Content -Raw -Encoding UTF8 -Path $path -ErrorAction SilentlyContinue
-    if ($null -eq $raw) { $raw = '' }
-    $content = [string]$raw
-    $bak = "$path.pre-hyeok.bak"
-    if ((-not (Test-Path $bak)) -and ($content -notmatch 'hyeok-gov') -and ($content.Length -gt 0)) {
-      Copy-Item $path $bak -Force
+function Ensure-Directory([string]$Path) {
+  Assert-PlainPath $Path
+  if (Test-Path -LiteralPath $Path) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
+      throw "Expected a directory, found a file: $Path"
     }
-    $pattern = '(?s)' + [regex]::Escape($begin) + '.*?' + [regex]::Escape($end)
-    if ($content.Length -gt 0 -and [regex]::IsMatch($content, $pattern)) {
-      $content = [regex]::Replace($content, $pattern, { param($m) $block })
-    } elseif ($content.Length -gt 0) {
-      $content = $content.TrimEnd() + "`n`n" + $block + "`n"
+  } else {
+    [void][System.IO.Directory]::CreateDirectory($Path)
+  }
+}
+
+function Backup-File([string]$Path, [string]$RelativePath) {
+  if (-not (Test-Path -LiteralPath $Path)) { return }
+  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+    throw "Refusing to replace a directory with a file: $Path"
+  }
+  if (-not $script:BackupRoot) {
+    $runId = (Get-Date -Format 'yyyyMMddTHHmmss') + '-' + [guid]::NewGuid().ToString('N')
+    $script:BackupRoot = Join-Path $UserHome ".hyeok/backups/codex-$runId"
+  }
+  $backup = Join-Path $script:BackupRoot $RelativePath
+  Ensure-Directory (Split-Path -Parent $backup)
+  if (-not (Test-Path -LiteralPath $backup)) {
+    Copy-Item -LiteralPath $Path -Destination $backup -ErrorAction Stop
+  }
+}
+
+function Write-ManagedText([string]$Path, [string]$Text, [string]$RelativePath) {
+  Assert-PlainPath $Path
+  $encoding = New-Object System.Text.UTF8Encoding($false)
+  $bytes = $encoding.GetBytes($Text)
+  if (Test-Path -LiteralPath $Path -PathType Leaf) {
+    $oldBytes = [System.IO.File]::ReadAllBytes($Path)
+    if ([Convert]::ToBase64String($oldBytes) -ceq [Convert]::ToBase64String($bytes)) { return }
+  }
+  Backup-File $Path $RelativePath
+  Ensure-Directory (Split-Path -Parent $Path)
+  [System.IO.File]::WriteAllBytes($Path, $bytes)
+  $script:ChangedFiles++
+}
+
+function Copy-SkillTree([string]$Source, [string]$Destination, [string]$RelativePath) {
+  Ensure-Directory $Destination
+  foreach ($item in Get-ChildItem -LiteralPath $Source -Force) {
+    $dest = Join-Path $Destination $item.Name
+    $relative = Join-Path $RelativePath $item.Name
+    Assert-PlainPath $dest
+    if ($item.PSIsContainer) {
+      Copy-SkillTree $item.FullName $dest $relative
     } else {
-      $content = $block + "`n"
-    }
-  } else {
-    $content = $block + "`n"
-  }
-  Write-NoBom $path $content
-  Note $path
-}
-
-# ---- skill install (user-global, multi-host) ----
-
-function Get-SkillTargets {
-  # Returns unique absolute skill roots that should receive user skills on this machine.
-  $roots = New-Object System.Collections.Generic.List[string]
-  $add = {
-    param($p)
-    if (-not $p) { return }
-    if (-not $roots.Contains($p)) { [void]$roots.Add($p) }
-  }
-  # Shared agents skills dir — Codex USER scope + Grok discovery
-  & $add (Join-Path $Home_ '.agents\skills')
-  if ($script:hasClaude) { & $add (Join-Path $Home_ '.claude\skills') }
-  if ($script:hasCodex)  {
-    & $add (Join-Path $Home_ '.codex\skills')
-    & $add (Join-Path $Home_ '.agents\skills')
-  }
-  if ($script:hasGrok) {
-    & $add (Join-Path $Home_ '.grok\skills')
-    & $add (Join-Path $Home_ '.agents\skills')
-  }
-  # Always seed agents + claude/codex/grok if any host present, so re-runs stay complete
-  return @($roots | Select-Object -Unique)
-}
-
-function Copy-Tree($src, $dest) {
-  # Prefer robocopy on Windows (handles re-runs / locked files better than Copy-Item).
-  if (Get-Command robocopy -ErrorAction SilentlyContinue) {
-    # /E copy subdirs incl empty; /IS /IT re-copy same/tweaked files; /PURGE remove extras in dest
-    $null = & robocopy $src $dest /E /IS /IT /PURGE /NFL /NDL /NJH /NJS /nc /ns /np
-    $rc = $LASTEXITCODE
-    # robocopy: 0-7 = success with various copy counts; >=8 = failure
-    if ($rc -ge 8) { throw "robocopy failed rc=$rc ($src -> $dest)" }
-    return
-  }
-  if (Test-Path $dest) {
-    Get-ChildItem -Force -LiteralPath $dest | ForEach-Object {
-      Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
-    }
-  } else {
-    New-Item -ItemType Directory -Force -Path $dest | Out-Null
-  }
-  Get-ChildItem -Force -LiteralPath $src | ForEach-Object {
-    Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $dest $_.Name) -Recurse -Force -ErrorAction Stop
-  }
-}
-
-function Install-SkillTree($name, $srcDir, $extraNote) {
-  if (-not (Test-Path -LiteralPath $srcDir)) { Warn "skill source missing: $srcDir"; return }
-  $skillMd = Join-Path $srcDir 'SKILL.md'
-  if (-not (Test-Path -LiteralPath $skillMd)) { Warn "no SKILL.md in $srcDir"; return }
-  $srcDir = (Resolve-Path -LiteralPath $srcDir).Path
-  $targets = @(Get-SkillTargets)
-  if ($targets.Count -eq 0) {
-    $targets = @((Join-Path $Home_ '.agents\skills'))
-  }
-  foreach ($root in $targets) {
-    if ([string]::IsNullOrWhiteSpace($root)) { continue }
-    $dest = Join-Path $root $name
-    $bak  = "$dest.pre-hyeok.bak"
-    try {
-      if (-not (Test-Path -LiteralPath $root)) {
-        New-Item -ItemType Directory -Force -Path $root | Out-Null
+      if (Test-Path -LiteralPath $dest -PathType Leaf) {
+        if ((Get-ContentHash $item.FullName) -eq (Get-ContentHash $dest)) { continue }
       }
-      # Foreign skill (has SKILL.md, no our marker): backup once before overwrite
-      if ((Test-Path -LiteralPath $dest) `
-          -and -not (Test-Path -LiteralPath (Join-Path $dest $MARKER)) `
-          -and (Test-Path -LiteralPath (Join-Path $dest 'SKILL.md')) `
-          -and -not (Test-Path -LiteralPath $bak)) {
-        Rename-Item -LiteralPath $dest -NewName (Split-Path $bak -Leaf) -Force
-        Warn "backed up existing foreign skill -> $bak"
-      }
-      if (-not (Test-Path -LiteralPath $dest)) {
-        New-Item -ItemType Directory -Force -Path $dest | Out-Null
-      }
-      Copy-Tree $srcDir $dest
-      $stamp = "name=$name`nsource=$srcDir`ninstalled=$(Get-Date -Format o)`n"
-      if ($extraNote) { $stamp += "note=$extraNote`n" }
-      Write-NoBom (Join-Path $dest $MARKER) $stamp
-      if (-not (Test-Path -LiteralPath (Join-Path $dest 'SKILL.md'))) {
-        throw "SKILL.md missing after copy into $dest"
-      }
-      Note $dest
-      Info "skill $name -> $dest"
-    } catch {
-      Warn "skill $name install failed at $dest : $($_.Exception.Message)"
+      Backup-File $dest $relative
+      Copy-Item -LiteralPath $item.FullName -Destination $dest -Force -ErrorAction Stop
+      $script:ChangedFiles++
     }
   }
 }
 
-function Install-GovernanceSkill($govBody) {
-  $fm = @(
-    '---',
-    'name: hyeok-governance',
-    'description: >',
-    '  Task routing/priority — ponytail (code policy), typst-korean (Korean Typst docs, explicit only),',
-    '  diagram-design (editorial HTML+SVG), archify (interactive system maps), lieflat-charts (numeric HTML, Noncommercial),',
-'  humanize-korean/im-not-ai (REQUIRED Korean prose for writing/docs).',
-    '---',
-    '',
-    ''
-  ) -join "`n"
-  $tmp = Join-Path $env:TEMP ('hyeok-gov-skill-' + [guid]::NewGuid().ToString('N').Substring(0,8))
-  New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+$isolated = $PSBoundParameters.ContainsKey('TargetHome')
+if ($isolated) {
+  if ([string]::IsNullOrWhiteSpace($TargetHome)) { throw 'TargetHome must not be empty.' }
+  $UserHome = $TargetHome
+} elseif ($env:USERPROFILE) {
+  $UserHome = $env:USERPROFILE
+} else {
+  $UserHome = $HOME
+}
+if (-not [System.IO.Path]::IsPathRooted($UserHome) -or $UserHome -match '[\r\n]') {
+  throw 'The target home must be an absolute path without line breaks.'
+}
+$UserHome = [System.IO.Path]::GetFullPath($UserHome)
+Assert-PlainPath $UserHome
+if (-not (Test-Path -LiteralPath $UserHome -PathType Container)) {
+  throw "The target home must already exist: $UserHome"
+}
+$SkillsRoot = Join-Path $UserHome '.agents/skills'
+$CodexDirectory = if (-not $isolated -and $env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $UserHome '.codex' }
+if (-not [System.IO.Path]::IsPathRooted($CodexDirectory) -or $CodexDirectory -match '[\r\n]') {
+  throw 'CODEX_HOME must be an absolute path without line breaks.'
+}
+$CodexDirectory = [System.IO.Path]::GetFullPath($CodexDirectory)
+Assert-PlainPath $SkillsRoot
+Assert-PlainPath $CodexDirectory
+Assert-PlainPath (Join-Path $UserHome '.hyeok/backups')
+$override = Join-Path $CodexDirectory 'AGENTS.override.md'
+$AgentsPath = if (Test-Path -LiteralPath $override -PathType Leaf) { $override } else { Join-Path $CodexDirectory 'AGENTS.md' }
+Assert-PlainPath $AgentsPath
+
+$SkillSources = [ordered]@{
+  'hyeok-governance' = 'plugins/hyeok-governance/skills/hyeok-governance'
+  'typst-korean' = 'plugins/typst-korean/skills/typst-korean'
+  'diagram-design' = 'plugins/diagram-design/skills/diagram-design'
+  'archify' = 'plugins/archify/skills/archify'
+  'lieflat-charts' = 'plugins/lieflat-charts/skills/lieflat-charts'
+}
+if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'plugins/juhyeoknizer/skills/juhyeoknizer/SKILL.md') -PathType Leaf) {
+  $SkillSources['juhyeoknizer'] = 'plugins/juhyeoknizer/skills/juhyeoknizer'
+}
+$PluginReceipt = Join-Path $UserHome '.hyeok/codex-plugins-installed'
+Assert-PlainPath $PluginReceipt
+foreach ($legacyName in @('humanize-korean','humanize','humanize-redo')) {
+  foreach ($root in @($SkillsRoot, (Join-Path $UserHome '.codex/skills'), (Join-Path $CodexDirectory 'skills'))) {
+    $legacy = Join-Path $root "$legacyName/SKILL.md"
+    if (Test-Path -LiteralPath $legacy) {
+      throw "Legacy writing skill at $legacy. Preserve or disable that copy before installing juhyeoknizer as the single writing skill."
+    }
+  }
+}
+if ($Mode -eq 'plugins') {
+  if ($SkipCliPlugins) { throw '-SkipCliPlugins conflicts with -Mode plugins.' }
+  foreach ($name in $SkillSources.Keys) {
+    foreach ($root in @($SkillsRoot, (Join-Path $UserHome '.codex/skills'), (Join-Path $CodexDirectory 'skills'))) {
+      if (Test-Path -LiteralPath (Join-Path $root "$name/SKILL.md")) {
+        throw "Standalone skill at $root/$name. Uninstall or disable that copy before using plugins mode."
+      }
+    }
+  }
+  $codex = Get-Command codex -ErrorAction Stop
+  $config = Join-Path $CodexDirectory 'config.toml'
+  Assert-PlainPath $config
+  $previousCodexHome = $env:CODEX_HOME
   try {
-    Write-NoBom (Join-Path $tmp 'SKILL.md') ($fm + $govBody)
-    Install-SkillTree 'hyeok-governance' $tmp 'governance-inlined'
+    $env:CODEX_HOME = $CodexDirectory
+    & $codex plugin add --help | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'This Codex does not support plugin add. Use skills mode; the installer never updates Codex.' }
+    & $codex plugin marketplace add --help | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'This Codex does not support local plugin marketplaces. Use skills mode.' }
+    Backup-File $config 'plugin-config/config.toml'
+    $receiptText = "installer=codex-plugins-v1`n"
+    if (Test-Path -LiteralPath $PluginReceipt -PathType Leaf) {
+      $previousReceipt = [System.IO.File]::ReadAllText($PluginReceipt)
+      if ($previousReceipt -match '(?m)^installer=codex-plugins-v1\r?$') { $receiptText = $previousReceipt }
+    }
+    foreach ($name in $SkillSources.Keys) {
+      if ($receiptText -notmatch ('(?m)^plugin=' + [regex]::Escape($name) + '\r?$')) { $receiptText += "plugin=$name`n" }
+    }
+    Write-ManagedText $PluginReceipt $receiptText 'plugin-config/receipt'
+    & $codex plugin marketplace add $PSScriptRoot --json | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'Codex could not add the local marketplace.' }
+    foreach ($name in $SkillSources.Keys) {
+      & $codex plugin add "$name@hyeok-plugins" --json | Out-Null
+      if ($LASTEXITCODE -ne 0) { throw "Codex could not install $name@hyeok-plugins." }
+      Info "plugin $name@hyeok-plugins installed"
+    }
   } finally {
-    Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+    $env:CODEX_HOME = $previousCodexHome
   }
+  Info 'Done in plugins mode. No standalone skills or AGENTS bootstrap were copied.'
+  if ($BackupRoot) { Info "Previous file contents -> $BackupRoot" }
+  return
+}
+if (Test-Path -LiteralPath $PluginReceipt) {
+  throw 'This pack has a plugins-mode receipt. Uninstall that mode before using standalone skills mode.'
 }
 
-function Install-CliPlugins {
-  if ($SkipCliPlugins) { Info 'CLI plugin install skipped (-SkipCliPlugins)'; return }
-  $root = $PSScriptRoot
-
-  # Claude Code: marketplace + user-scope plugin install
-  if ($script:hasClaude -and (Get-Command claude -ErrorAction SilentlyContinue)) {
-    try {
-      & claude plugin marketplace add $root --scope user 2>&1 | Out-Null
-      if ($LASTEXITCODE -ne 0) {
-        # Fallback: GitHub remote marketplace
-        & claude plugin marketplace add hyeok8055/hyeok-plugins --scope user 2>&1 | Out-Null
-      }
-      foreach ($p in @('hyeok-governance','typst-korean','diagram-design','archify','humanize-korean','lieflat-charts')) {
-        $id = "${p}@${MarketName}"
-        try {
-          & claude plugin install $id -s user 2>&1 | Out-Null
-          if ($LASTEXITCODE -eq 0) { Info "Claude plugin installed: $id (user)" }
-          else { Warn "Claude plugin install failed: $id (skills still installed)" }
-        } catch { Warn "Claude plugin install errored: $id" }
-      }
-    } catch { Warn "Claude marketplace/plugin CLI failed: $($_.Exception.Message)" }
-  } elseif ($script:hasClaude) {
-    Info 'Claude dir present but `claude` CLI not on PATH — skills installed; run plugin install manually if needed.'
+# Preflight every tree before writing anything. Do not migrate or delete older
+# installs automatically: those may contain foreign files or be plugin-managed.
+foreach ($name in $SkillSources.Keys) {
+  $source = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot $SkillSources[$name]))
+  if (-not (Test-Path -LiteralPath (Join-Path $source 'SKILL.md') -PathType Leaf)) {
+    throw "Skill source missing: $source/SKILL.md"
   }
-
-  # Codex CLI: marketplace + plugin add + enable in config.toml
-  if ($script:hasCodex -and (Get-Command codex -ErrorAction SilentlyContinue)) {
-    # Heal personal marketplace BOM (Codex JSON parser rejects UTF-8 BOM at col 1)
-    $personalMp = Join-Path $Home_ '.agents\plugins\marketplace.json'
-    if (Test-Path $personalMp) {
-      try {
-        $bytes = [System.IO.File]::ReadAllBytes($personalMp)
-        if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
-          $text = [System.Text.Encoding]::UTF8.GetString($bytes, 3, $bytes.Length - 3)
-          Write-NoBom $personalMp $text
-          Info 'Codex: stripped UTF-8 BOM from ~/.agents/plugins/marketplace.json'
-        }
-      } catch { Warn "Codex: could not heal personal marketplace.json: $($_.Exception.Message)" }
+  Assert-PlainTree $source
+  $destination = Join-Path $SkillsRoot $name
+  Assert-PlainTree $destination
+  $separator = [System.IO.Path]::DirectorySeparatorChar
+  if ($destination.StartsWith($source.TrimEnd($separator) + $separator, [System.StringComparison]::OrdinalIgnoreCase) -or
+      $source.StartsWith($destination.TrimEnd($separator) + $separator, [System.StringComparison]::OrdinalIgnoreCase) -or
+      $source -eq $destination) {
+    throw "Source and destination overlap: $source -> $destination"
+  }
+  foreach ($legacyRoot in @((Join-Path $UserHome '.codex/skills'), (Join-Path $CodexDirectory 'skills'))) {
+    $legacy = Join-Path $legacyRoot "$name/SKILL.md"
+    if (Test-Path -LiteralPath $legacy) {
+      throw "Duplicate skill at $legacy. Resolve the old installation before using standalone skills mode."
     }
-    try {
-      & codex plugin marketplace add $root --json 2>&1 | Out-Null
-      if ($LASTEXITCODE -ne 0) {
-        & codex plugin marketplace add hyeok8055/hyeok-plugins --json 2>&1 | Out-Null
-      }
-      foreach ($p in @('hyeok-governance','typst-korean','diagram-design','archify','humanize-korean','lieflat-charts')) {
-        $id = "${p}@${MarketName}"
-        $added = $false
-        try {
-          & codex plugin add $id --json 2>&1 | Out-Null
-          if ($LASTEXITCODE -eq 0) { $added = $true; Info "Codex plugin installed: $id" }
-          else {
-            & codex plugin add $p --marketplace $MarketName --json 2>&1 | Out-Null
-            if ($LASTEXITCODE -eq 0) { $added = $true; Info "Codex plugin installed: $p@$MarketName" }
-            else { Warn "Codex plugin add failed: $id (skills still installed)" }
-          }
-        } catch { Warn "Codex plugin add errored: $id" }
-        if ($added) {
-          # Ensure enabled = true in ~/.codex/config.toml
-          $cfgPath = Join-Path $Home_ '.codex\config.toml'
-          try {
-            $cfg = if (Test-Path $cfgPath) { Get-Content -Raw -Encoding UTF8 $cfgPath } else { '' }
-            if ($null -eq $cfg) { $cfg = '' }
-            $section = "[plugins.`"$id`"]"
-            if ($cfg -notmatch [regex]::Escape($section)) {
-              $cfg = $cfg.TrimEnd() + "`n`n$section`nenabled = true`n"
-              Write-NoBom $cfgPath $cfg
-              Info "Codex: enabled $id in config.toml"
-            } elseif ($cfg -notmatch ([regex]::Escape($section) + '[\s\S]*?enabled\s*=')) {
-              # section exists but no enabled line nearby — append enable block anyway if disabled
-              if ($cfg -match ([regex]::Escape($section) + '\s*\r?\nenabled\s*=\s*false')) {
-                $cfg = [regex]::Replace($cfg, ([regex]::Escape($section) + '\s*\r?\nenabled\s*=\s*false'), "$section`nenabled = true")
-                Write-NoBom $cfgPath $cfg
-                Info "Codex: flipped $id enabled=true"
-              }
-            }
-          } catch { Warn "Codex: could not enable $id in config.toml" }
-        }
-      }
-    } catch { Warn "Codex marketplace/plugin CLI failed: $($_.Exception.Message)" }
-  } elseif ($script:hasCodex) {
-    Info 'Codex dir present but `codex` CLI not on PATH — skills + AGENTS.md installed.'
   }
-
-  # Grok Build: marketplace + trusted plugin install (local paths preferred)
-  if ($script:hasGrok -and (Get-Command grok -ErrorAction SilentlyContinue)) {
-    # marketplace add may fail if already configured — that is OK
-    try { & grok plugin marketplace add $root 2>&1 | Out-Null } catch {}
-    try { & grok plugin marketplace add hyeok8055/hyeok-plugins 2>&1 | Out-Null } catch {}
-    foreach ($rel in @('plugins\hyeok-governance','plugins\typst-korean','plugins\diagram-design','plugins\archify','plugins\humanize-korean','plugins\lieflat-charts')) {
-      $src = Join-Path $root $rel
-      try {
-        $out = & grok plugin install $src --trust 2>&1 | Out-String
-        if ($LASTEXITCODE -eq 0 -or $out -match 'already|installed|updated|enabled') {
-          Info "Grok plugin installed: $src"
-        } else {
-          $gh = "hyeok8055/hyeok-plugins#$($rel -replace '\\','/')"
-          $out2 = & grok plugin install $gh --trust 2>&1 | Out-String
-          if ($LASTEXITCODE -eq 0 -or $out2 -match 'already|installed|updated|enabled') {
-            Info "Grok plugin installed: $gh"
-          } else { Warn "Grok plugin install failed: $src (skills still installed)" }
-        }
-      } catch {
-        # "already configured/installed" is fine
-        if ($_.Exception.Message -match 'already') { Info "Grok plugin already present: $src" }
-        else { Warn "Grok plugin install errored: $src — $($_.Exception.Message)" }
-      }
-    }
-  } elseif ($script:hasGrok) {
-    Info 'Grok dir present but `grok` CLI not on PATH — skills installed to ~/.grok/skills + ~/.agents/skills.'
+  if (Test-Path -LiteralPath (Join-Path $SkillsRoot "$name.pre-hyeok.bak/SKILL.md")) {
+    throw "An old backup of $name is in the skill discovery root. Preserve it outside that root before installing."
   }
 }
 
-# ---- locate bodies ----
-$GovPath = Join-Path $PSScriptRoot 'plugins\hyeok-governance\GOVERNANCE.md'
-if (-not (Test-Path $GovPath)) { throw "GOVERNANCE.md not found at $GovPath — run from the repo root." }
-$Gov = Get-Content -Raw -Encoding UTF8 -Path $GovPath
-$TypstSkillDir = Join-Path $PSScriptRoot 'plugins\typst-korean\skills\typst-korean'
-$DiagramSkillDir = Join-Path $PSScriptRoot 'plugins\diagram-design\skills\diagram-design'
-$ArchifySkillDir = Join-Path $PSScriptRoot 'plugins\archify\skills\archify'
-$HumanizeSkillDir = Join-Path $PSScriptRoot 'plugins\humanize-korean\skills\humanize-korean'
-$HumanizeLightDir = Join-Path $PSScriptRoot 'plugins\humanize-korean\skills\humanize'
-$HumanizeRedoDir = Join-Path $PSScriptRoot 'plugins\humanize-korean\skills\humanize-redo'
-$LieflatSkillDir = Join-Path $PSScriptRoot 'plugins\lieflat-charts\skills\lieflat-charts'
-
-# ---- host detection ----
-function Have($name, $dir) {
-  if (Test-Path (Join-Path $Home_ $dir)) { return $true }
-  return [bool](Get-Command $name -ErrorAction SilentlyContinue)
-}
-$script:hasClaude = Have 'claude' '.claude'
-$script:hasCodex  = Have 'codex'  '.codex'
-$script:hasGrok   = (Have 'grok' '.grok') -or (Test-Path (Join-Path $Home_ '.grok-build'))
-Info ("hosts detected -> claude:{0} codex:{1} grok:{2}" -f $script:hasClaude,$script:hasCodex,$script:hasGrok)
-
-# ---- intensity pins ----
-Set-DefaultMode 'ponytail' $PonytailMode
-
-# ---- user-global skill trees (all hosts) ----
-Info 'Installing user-global skill trees...'
-Install-GovernanceSkill $Gov
-if (Test-Path $TypstSkillDir) { Install-SkillTree 'typst-korean' $TypstSkillDir }
-else { Warn "typst-korean skill missing at $TypstSkillDir" }
-if (Test-Path $DiagramSkillDir) { Install-SkillTree 'diagram-design' $DiagramSkillDir 'upstream:cathrynlavery/diagram-design' }
-else { Warn "diagram-design skill missing at $DiagramSkillDir" }
-if (Test-Path $ArchifySkillDir) { Install-SkillTree 'archify' $ArchifySkillDir 'upstream:tt-a1i/archify' }
-else { Warn "archify skill missing at $ArchifySkillDir" }
-if (Test-Path $HumanizeSkillDir) { Install-SkillTree 'humanize-korean' $HumanizeSkillDir 'upstream:epoko77-ai/im-not-ai' }
-else { Warn "humanize-korean skill missing at $HumanizeSkillDir" }
-if (Test-Path $HumanizeLightDir) { Install-SkillTree 'humanize' $HumanizeLightDir 'upstream:epoko77-ai/im-not-ai' }
-# humanize-redo vendored but not auto-installed
-if (Test-Path $LieflatSkillDir) { Install-SkillTree 'lieflat-charts' $LieflatSkillDir 'upstream:larashero3-dotcom/lieflat-charts' }
-else { Warn "lieflat-charts skill missing at $LieflatSkillDir" }
-
-# ---- Claude flag + hook smoke ----
-if ($script:hasClaude) {
-  $node = Get-Command node -ErrorAction SilentlyContinue
-  if ($node) {
-    $hook = Join-Path $PSScriptRoot 'plugins\hyeok-governance\hooks\inject-governance.js'
-    try {
-      $out = '' | & node $hook full 2>$null
-      if ($out -match 'additionalContext') { Info 'Claude hook smoke test OK' } else { Warn 'Claude hook produced no context (fail-open)' }
-    } catch { Warn 'Claude hook smoke test errored (fail-open)' }
-  } else { Warn 'node not on PATH — Claude governance hook no-ops until node available' }
+$content = if (Test-Path -LiteralPath $AgentsPath -PathType Leaf) { [System.IO.File]::ReadAllText($AgentsPath) } else { '' }
+$pattern = '(?ms)^' + [regex]::Escape($BeginTag) + '\r?\n.*?^' + [regex]::Escape($EndTag) + '(?=\r?$)'
+$beginCount = [regex]::Matches($content, [regex]::Escape($BeginTag)).Count
+$endCount = [regex]::Matches($content, [regex]::Escape($EndTag)).Count
+if ($beginCount -ne $endCount -or $beginCount -gt 1 -or
+    ($beginCount -eq 1 -and -not [regex]::IsMatch($content, $pattern))) {
+  throw "Malformed or repeated hyeok governance markers in $AgentsPath; left unchanged."
 }
 
-# ---- Codex AGENTS merge ----
-if ($script:hasCodex) {
-  $codexOverride = Join-Path $Home_ '.codex\AGENTS.override.md'
-  $codexTarget = if (Test-Path $codexOverride) { $codexOverride } else { Join-Path $Home_ '.codex\AGENTS.md' }
-  Merge-Sentinel $codexTarget $Gov $BEGIN $END
-  Info "Codex: governance merged into $codexTarget"
-
+Info "Codex standalone skills mode -> $SkillsRoot"
+Info 'Use either standalone skills or the Codex Plugins UI for this pack, not both.'
+if ($PSBoundParameters.ContainsKey('PonytailMode')) {
+  Write-Warning '-PonytailMode is retained for compatibility and no longer writes tool settings.'
+}
+foreach ($name in $SkillSources.Keys) {
+  $source = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot $SkillSources[$name]))
+  $dest = Join-Path $SkillsRoot $name
+  $state = Join-Path $UserHome ".hyeok/state/skills/$name"
+  Ensure-Directory $state
+  $entry = Join-Path $dest 'SKILL.md'
+  $existingMarker = Join-Path $dest $Marker
+  $owned = (Test-Path -LiteralPath $existingMarker -PathType Leaf) -and
+    ([System.IO.File]::ReadAllLines($existingMarker) -contains 'installer=codex-skills-v1')
+  $original = Join-Path $state 'original/SKILL.md'
+  Assert-PlainPath $original
+  if (-not $owned -and (Test-Path -LiteralPath $entry -PathType Leaf) -and -not (Test-Path -LiteralPath $original)) {
+    Ensure-Directory (Split-Path -Parent $original)
+    Copy-Item -LiteralPath $entry -Destination $original
+  }
+  Copy-SkillTree $source $dest "skills/$name"
+  $stateFile = Join-Path $state 'SKILL.md'
+  Assert-PlainPath $stateFile
+  if (-not (Test-Path -LiteralPath $stateFile -PathType Leaf) -or
+      (Get-ContentHash $entry) -ne (Get-ContentHash $stateFile)) {
+    Backup-File $stateFile "state/skills/$name/SKILL.md"
+    Copy-Item -LiteralPath $entry -Destination $stateFile -Force
+  }
+  Write-ManagedText (Join-Path $dest $Marker) "installer=codex-skills-v1`nname=$name`nsource=$source`n" "skills/$name/$Marker"
+  Info "skill $name -> $dest"
 }
 
-
-# ---- Pretendard fonts ----
-if ($SkipFonts) { Info 'Pretendard font install skipped (-SkipFonts)' }
-else {
-  $fontScript = Join-Path $PSScriptRoot 'scripts\install-pretendard.ps1'
-  if (Test-Path $fontScript) {
-    try { & $fontScript } catch { Warn "Pretendard font install failed: $_" }
-  } else { Warn 'scripts/install-pretendard.ps1 missing' }
+$nl = if ($content.Contains("`r`n")) { "`r`n" } else { "`n" }
+$governancePath = (Join-Path $SkillsRoot 'hyeok-governance/SKILL.md').Replace('\', '/')
+$body = @(
+  $BeginTag,
+  'Use the installed hyeok-governance skill to route Codex work through the appropriate skills and available tools.',
+  "Start with <$governancePath> and read its references only when the task needs them.",
+  'Follow the user and repository instructions and the capabilities of the current Codex session.',
+  $EndTag
+) -join $nl
+if ($beginCount -eq 1) {
+  $updated = [regex]::Replace($content, $pattern, [System.Text.RegularExpressions.MatchEvaluator]{ param($match) $body })
+} elseif ($content.Length -eq 0) {
+  $updated = $body + $nl
+} else {
+  $gap = if ($content.EndsWith("`n")) { $nl } else { $nl + $nl }
+  $updated = $content + $gap + $body + $nl
 }
-
-# ---- CLI plugin install (user scope) ----
-Install-CliPlugins
-
-# ---- optional upstream ----
-
-# ---- summary ----
-Write-Host ''
-Info '=== DONE. Touched (sample): ==='
-$Touched | Sort-Object -Unique | Select-Object -First 40 | ForEach-Object { Write-Host "  $_" }
-if ($Touched.Count -gt 40) { Write-Host ("  ... +{0} more" -f ($Touched.Count - 40)) }
-Write-Host ''
-Info 'Verify:'
-Write-Host '  Claude: claude plugin list'
-Write-Host '  Codex:  codex plugin list   (and ls ~/.agents/skills ~/.codex/skills)'
-Write-Host '  Grok:   grok plugin list    (and ls ~/.grok/skills ~/.agents/skills)'
-Write-Host ''
-Info 'Undo anytime: .\uninstall.ps1'
+Write-ManagedText $AgentsPath $updated ('instructions/' + (Split-Path -Leaf $AgentsPath))
+Info "Governance bootstrap -> $AgentsPath"
+Info "Done. $ChangedFiles files changed. No CLI, font, or dependency installation was run."
+if ($BackupRoot) { Info "Previous file contents -> $BackupRoot" }

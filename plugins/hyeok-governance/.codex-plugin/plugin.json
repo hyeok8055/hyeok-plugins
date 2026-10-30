@@ -1,7 +1,7 @@
 {
   "name": "hyeok-governance",
-  "version": "1.4.4",
-  "description": "크로스호스트 에이전트 거버넌스 - ponytail · typst-korean · diagram-design · archify · lieflat-charts · humanize-korean(im-not-ai) 우선순위·역할 분배. Claude Code / Codex CLI / Grok Build.",
+  "version": "2.0.0",
+  "description": "주혁의 Codex 작업 단계에 맞춰 스킬, 플러그인과 필요한 MCP를 선택하고 구성한다. Sol/Luna 인계와 주최측 규정을 적용한다.",
   "author": {
     "name": "hyeok8055",
     "url": "https://github.com/hyeok8055"
@@ -10,24 +10,24 @@
   "repository": "https://github.com/hyeok8055/hyeok-plugins",
   "license": "MIT",
   "keywords": [
-    "governance",
-    "ponytail",
-    "typst-korean",
-    "diagram-design",
+    "codex",
+    "openai",
+    "workflow",
+    "juhyeoknizer",
+    "skill-creator",
+    "context7",
+    "mcp",
     "archify",
-    "hooks",
-    "policy",
-    "cross-host",
-    "humanize-korean",
-    "im-not-ai",
-    "lieflat-charts"
+    "diagram-design",
+    "lieflat-charts",
+    "typst-korean"
   ],
   "skills": "./skills/",
-  "hooks": "./hooks/hooks.json",
+  "hooks": "./hooks/codex-hooks.json",
   "interface": {
     "displayName": "hyeok-governance",
-    "shortDescription": "Cross-host task routing and priority rules",
-    "longDescription": "Orthogonal layers: ponytail (code size), typst-korean (Korean Typst docs), diagram-design (editorial diagrams), archify (interactive system maps), lieflat-charts (numeric HTML charts, Noncommercial), humanize-korean/im-not-ai (REQUIRED for recorded Korean writing/docs; not chat).",
+    "shortDescription": "Codex skill and tool routing",
+    "longDescription": "Route personal tasks through available skills and MCP tools. Use the official skill creator for skill changes, configure required MCPs within the authorized scope, and apply organizer restrictions before tool execution.",
     "developerName": "hyeok8055",
     "category": "Productivity",
     "capabilities": [
@@ -36,7 +36,7 @@
     ],
     "websiteURL": "https://github.com/hyeok8055/hyeok-plugins",
     "defaultPrompt": [
-      "Follow hyeok-governance standing orders for this session."
+      "Use hyeok-governance to select the skills, models, and tools needed for this task."
     ],
     "brandColor": "#1c1917"
   }

@@ -1,0 +1,7 @@
+interface:
+  display_name: "주혁나이저"
+  short_description: "보고서와 이력서를 주혁의 문체로 다듬고 수치와 사실을 보존"
+  default_prompt: "$juhyeoknizer 스킬로 이 문서를 내 문체에 맞게 다듬어 줘. 제공한 사실과 구현 상태를 보존하고 가운데점 없이 작성해 줘."
+
+policy:
+  allow_implicit_invocation: true

@@ -10,6 +10,15 @@ metadata:
 
 # Archify
 
+## Codex execution context
+
+Use the actual tools and permissions of the current Codex session. In a restricted
+evaluation, organizer rules override the browser checks and update-awareness steps below.
+When Computer Use is forbidden, do not launch automated browsers, screenshots, previews,
+or browser exports. Run permitted local validation and delivery commands, and report visual
+inspection as unverified for the user to check manually. Skip network update checks in that
+environment; do not upgrade the provided Codex. Do not send task files to external services.
+
 Create a self-contained, interactive HTML diagram from a small typed JSON specification. Static output is the default; enable motion only when the user asks for a demo or presentation.
 
 ## Fast authoring path

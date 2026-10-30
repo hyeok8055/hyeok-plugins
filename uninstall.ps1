@@ -1,141 +1,125 @@
 <#
 .SYNOPSIS
-  Reverse install.ps1: strip governance sentinels, restore backups, remove
-  defaultMode pins, remove hyeok-marked user skills, and attempt CLI plugin uninstall.
-  Idempotent and fail-open.
+  Remove the Codex installation made by install.ps1.
+.DESCRIPTION
+  Default skills mode deactivates only marked, unmodified SKILL.md entry points
+  and removes the owned AGENTS bootstrap. Resource files and all backups remain.
+  Modified entry points and foreign skills are preserved. Original foreign
+  SKILL.md files, when recorded by this installer, are restored.
+  -Mode plugins calls only the official Codex plugin remove command for names
+  in the install receipt; it retains marketplace registration and other plugins.
+  Does not modify model/provider/auth/permissions/MCP or other hosts' settings.
+.PARAMETER TargetHome
+  Existing isolated home; CODEX_HOME is ignored when this is supplied.
 #>
-[CmdletBinding()] param()
-$ErrorActionPreference = 'Continue'
-$BEGIN = '<!-- BEGIN hyeok-gov -->'
-$END   = '<!-- END hyeok-gov -->'
-$MARKER = '.hyeok-installed'
-$Home_ = $env:USERPROFILE
-$MarketName = 'hyeok-plugins'
-$SkillNames = @('hyeok-governance','typst-korean','diagram-design','archify','humanize-korean','humanize','humanize-redo','lieflat-charts')
-
-function Info($m) { Write-Host "[hyeok] $m" }
-function Write-NoBom($path, $text) {
-  $dir = Split-Path -Parent $path
-  if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
-  [System.IO.File]::WriteAllText($path, $text, (New-Object System.Text.UTF8Encoding($false)))
+[CmdletBinding()]
+param(
+  [string]$TargetHome,
+  [ValidateSet('skills','plugins')]
+  [string]$Mode = 'skills'
+)
+$ErrorActionPreference = 'Stop'
+function Info([string]$Message) { Write-Host "[hyeok] $Message" }
+function Get-ContentHash([string]$Path) {
+  $hash = [Security.Cryptography.SHA256]::Create()
+  $stream = [IO.File]::OpenRead($Path)
+  try { return [BitConverter]::ToString($hash.ComputeHash($stream)) }
+  finally { $stream.Dispose(); $hash.Dispose() }
 }
-
-function Restore-Or-Strip($path) {
-  $bak = "$path.pre-hyeok.bak"
-  if (Test-Path $bak) {
-    Copy-Item $bak $path -Force; Remove-Item $bak -Force
-    Info "restored $path from backup"
-  } elseif (Test-Path $path) {
-    $c = Get-Content -Raw -Encoding UTF8 -Path $path
-    foreach ($pair in @(@($BEGIN,$END))) {
-      $pattern = '(?s)\r?\n?' + [regex]::Escape($pair[0]) + '.*?' + [regex]::Escape($pair[1]) + '\r?\n?'
-      $c = [regex]::Replace($c, $pattern, '')
-    }
-    if ([string]::IsNullOrWhiteSpace($c)) { Remove-Item $path -Force; Info "removed $path (was only hyeok blocks)" }
-    else { Write-NoBom $path $c; Info "stripped hyeok blocks from $path" }
-  }
-}
-
-function Remove-Vendor($dir) {
-  if ((Test-Path (Join-Path $dir '.hyeok-vendor'))) {
-    try { Remove-Item -Recurse -Force $dir; Info "removed vendored dir $dir" } catch { Info "could not remove $dir" }
-  } elseif (Test-Path (Join-Path $dir 'SKILL.md.pre-hyeok.bak')) {
-    Copy-Item (Join-Path $dir 'SKILL.md.pre-hyeok.bak') (Join-Path $dir 'SKILL.md') -Force
-    Remove-Item (Join-Path $dir 'SKILL.md.pre-hyeok.bak') -Force
-    Info "restored user-owned SKILL.md in $dir"
-  }
-}
-
-function Remove-DefaultMode($tool) {
-  if ($env:XDG_CONFIG_HOME) { $dir = Join-Path $env:XDG_CONFIG_HOME $tool }
-  else { $base = $env:APPDATA; if (-not $base) { $base = Join-Path $Home_ 'AppData\Roaming' }; $dir = Join-Path $base $tool }
-  $path = Join-Path $dir 'config.json'
-  if (Test-Path $path) {
-    try {
-      $obj = Get-Content -Raw -Path $path | ConvertFrom-Json
-      if ($obj.PSObject.Properties.Name -contains 'defaultMode') {
-        $obj.PSObject.Properties.Remove('defaultMode')
-        Write-NoBom $path (($obj | ConvertTo-Json -Depth 20))
-        Info "${tool}: removed defaultMode pin"
+function Assert-PlainPath([string]$Path) {
+  $candidate = [IO.Path]::GetFullPath($Path)
+  while ($candidate) {
+    $item = Get-Item -LiteralPath $candidate -Force -ErrorAction SilentlyContinue
+    if ($null -ne $item) {
+      if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+        throw "Refusing a symlink or junction: $candidate"
       }
-    } catch { Info "${tool}: config.json unreadable, left as-is" }
-  }
-}
-
-function Remove-MarkedSkill($root, $name) {
-  $dest = Join-Path $root $name
-  $marker = Join-Path $dest $MARKER
-  $bak = "$dest.pre-hyeok.bak"
-  if (Test-Path $marker) {
-    try { Remove-Item -Recurse -Force $dest; Info "removed skill $dest" } catch { Info "could not remove $dest" }
-    if (Test-Path $bak) {
-      try { Move-Item $bak $dest -Force; Info "restored pre-hyeok skill $dest" } catch {}
     }
-  } elseif (Test-Path $bak) {
-    # Installer moved foreign skill to bak but left our tree without marker somehow
-    try {
-      if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
-      Move-Item $bak $dest -Force
-      Info "restored pre-hyeok skill from $bak"
-    } catch {}
+    $candidate = Split-Path -Parent $candidate
   }
 }
-
-# Codex AGENTS
-Restore-Or-Strip (Join-Path $Home_ '.codex\AGENTS.override.md')
-Restore-Or-Strip (Join-Path $Home_ '.codex\AGENTS.md')
-Restore-Or-Strip (Join-Path $Home_ '.grok\GROK.md')
-Restore-Or-Strip (Join-Path $Home_ 'AGENTS.override.md')
-Remove-DefaultMode 'ponytail'
-
-
-# User skill trees (marker-guarded)
-$skillRoots = @(
-  (Join-Path $Home_ '.agents\skills'),
-  (Join-Path $Home_ '.claude\skills'),
-  (Join-Path $Home_ '.codex\skills'),
-  (Join-Path $Home_ '.grok\skills')
-) | Select-Object -Unique
-foreach ($root in $skillRoots) {
-  if (-not (Test-Path $root)) { continue }
-  foreach ($n in $SkillNames) { Remove-MarkedSkill $root $n }
+$isolated = $PSBoundParameters.ContainsKey('TargetHome')
+$UserHome = if ($isolated) { $TargetHome } elseif ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }
+if ([string]::IsNullOrWhiteSpace($UserHome) -or -not [IO.Path]::IsPathRooted($UserHome)) { throw 'An absolute target home is required.' }
+$UserHome = [IO.Path]::GetFullPath($UserHome)
+Assert-PlainPath $UserHome
+if (-not (Test-Path -LiteralPath $UserHome -PathType Container)) { throw 'The target home must already exist.' }
+$CodexDirectory = if (-not $isolated -and $env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $UserHome '.codex' }
+if (-not [IO.Path]::IsPathRooted($CodexDirectory)) { throw 'CODEX_HOME must be absolute.' }
+Assert-PlainPath $CodexDirectory
+$BackupRoot = Join-Path $UserHome ('.hyeok/backups/uninstall-' + [guid]::NewGuid().ToString('N'))
+function Backup-File([string]$Path, [string]$Relative) {
+  $dest = Join-Path $BackupRoot $Relative
+  Assert-PlainPath $Path
+  Assert-PlainPath $dest
+  [void][IO.Directory]::CreateDirectory((Split-Path -Parent $dest))
+  Copy-Item -LiteralPath $Path -Destination $dest -ErrorAction Stop
 }
-
-Info 'Note: pip packages (curl_cffi/bs4/pyyaml) are intentionally NOT uninstalled.'
-
-# Best-effort CLI plugin uninstall
-foreach ($pair in @(
-  @('claude', { param($p) & claude plugin uninstall "${p}@${MarketName}" 2>$null }),
-  @('codex',  { param($p) & codex plugin remove "${p}@${MarketName}" 2>$null; & codex plugin remove $p --marketplace $MarketName 2>$null }),
-  @('grok',   { param($p) & grok plugin uninstall $p --confirm 2>$null })
-)) {
-  $cli = $pair[0]; $fn = $pair[1]
-  if (-not (Get-Command $cli -ErrorAction SilentlyContinue)) { continue }
-  foreach ($p in $SkillNames) {
-    try { & $fn $p | Out-Null; Info "$cli: attempted plugin uninstall $p" } catch {}
-  }
-}
-
-
-# Pretendard fonts (only if hyeok marker — do not remove user-installed Pretendard)
-$fontDest = Join-Path $Home_ 'AppData\Local\Microsoft\Windows\Fonts'
-$fontMarker = Join-Path $fontDest '.hyeok-installed'
-$reg = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
-if (Test-Path $fontMarker) {
-  foreach ($w in @('Regular','Medium','SemiBold','Bold')) {
-    $f = "Pretendard-$w.otf"
-    $path = Join-Path $fontDest $f
-    if (Test-Path $path) { Remove-Item $path -Force; Info "removed $path" }
-    $name = "Pretendard $w (TrueType)"
-    if (Get-ItemProperty -Path $reg -Name $name -ErrorAction SilentlyContinue) {
-      Remove-ItemProperty -Path $reg -Name $name -ErrorAction SilentlyContinue
+if ($Mode -eq 'plugins') {
+  $receipt = Join-Path $UserHome '.hyeok/codex-plugins-installed'
+  Assert-PlainPath $receipt
+  if (-not (Test-Path -LiteralPath $receipt -PathType Leaf)) { Info 'No plugins-mode receipt. Nothing removed.'; return }
+  $lines = [IO.File]::ReadAllLines($receipt)
+  if ($lines -notcontains 'installer=codex-plugins-v1') { throw 'Foreign plugin receipt; left unchanged.' }
+  $allowed = @('hyeok-governance','typst-korean','diagram-design','archify','lieflat-charts','juhyeoknizer')
+  $names = @($lines | Where-Object { $_ -like 'plugin=*' } | ForEach-Object { $_.Substring(7) })
+  foreach ($name in $names) { if ($allowed -notcontains $name) { throw "Unexpected plugin receipt entry: $name" } }
+  $codex = Get-Command codex -ErrorAction Stop
+  $config = Join-Path $CodexDirectory 'config.toml'
+  Assert-PlainPath $config
+  if (Test-Path -LiteralPath $config -PathType Leaf) { Backup-File $config 'plugin-config/config.toml' }
+  $previousCodexHome = $env:CODEX_HOME
+  try {
+    $env:CODEX_HOME = $CodexDirectory
+    foreach ($name in $names) {
+      & $codex plugin remove "$name@hyeok-plugins" --json | Out-Null
+      if ($LASTEXITCODE -ne 0) { throw "Codex could not remove $name@hyeok-plugins. Receipt retained for retry." }
+      Info "Removed plugin $name@hyeok-plugins"
     }
-  }
-  Remove-Item $fontMarker -Force -ErrorAction SilentlyContinue
-} else {
-  Info 'skip Windows Fonts Pretendard (no .hyeok-installed marker)'
+  } finally { $env:CODEX_HOME = $previousCodexHome }
+  Backup-File $receipt 'plugin-config/receipt'
+  Remove-Item -LiteralPath $receipt -Force
+  return
 }
-$cache = Join-Path $Home_ '.hyeok\fonts\pretendard'
-if (Test-Path $cache) { Remove-Item -Recurse -Force $cache; Info "removed $cache" }
-
-Info 'Uninstall complete.'
+foreach ($name in @('hyeok-governance','typst-korean','diagram-design','archify','lieflat-charts','juhyeoknizer')) {
+  $skillDir = Join-Path $UserHome ".agents/skills/$name"
+  $entry = Join-Path $skillDir 'SKILL.md'
+  $marker = Join-Path $skillDir '.hyeok-installed'
+  $state = Join-Path $UserHome ".hyeok/state/skills/$name"
+  Assert-PlainPath $marker
+  Assert-PlainPath $entry
+  Assert-PlainPath $state
+  if (-not (Test-Path -LiteralPath $marker -PathType Leaf)) { continue }
+  if (([IO.File]::ReadAllLines($marker) -notcontains 'installer=codex-skills-v1') -or
+      ([IO.File]::ReadAllLines($marker) -notcontains "name=$name")) { continue }
+  $recorded = Join-Path $state 'SKILL.md'
+  Assert-PlainPath $recorded
+  if ((Test-Path -LiteralPath $entry -PathType Leaf) -and (Test-Path -LiteralPath $recorded -PathType Leaf) -and
+      (Get-ContentHash $entry) -eq (Get-ContentHash $recorded)) {
+    Backup-File $entry "skills/$name/SKILL.md"
+    $original = Join-Path $state 'original/SKILL.md'
+    Assert-PlainPath $original
+    if (Test-Path -LiteralPath $original -PathType Leaf) { Copy-Item -LiteralPath $original -Destination $entry -Force }
+    else { Remove-Item -LiteralPath $entry -Force }
+    Backup-File $marker "skills/$name/.hyeok-installed"
+    Remove-Item -LiteralPath $marker -Force
+    Info "Deactivated skill $name; resources and backups retained."
+  } else { Info "Preserved modified or unrecorded skill: $entry" }
+}
+foreach ($file in @('AGENTS.override.md','AGENTS.md')) {
+  $path = Join-Path $CodexDirectory $file
+  Assert-PlainPath $path
+  if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
+  $text = [IO.File]::ReadAllText($path)
+  $pattern = '(?ms)^<!-- BEGIN hyeok-gov -->\r?\n.*?^<!-- END hyeok-gov -->(?:\r?\n|$)'
+  $blocks = [regex]::Matches($text, $pattern)
+  if ($blocks.Count -eq 0) { continue }
+  if ($blocks.Count -ne 1 -or [regex]::Matches($text, '<!-- BEGIN hyeok-gov -->').Count -ne 1 -or
+      [regex]::Matches($text, '<!-- END hyeok-gov -->').Count -ne 1 -or
+      $blocks[0].Value -notmatch 'Use the installed hyeok-governance skill') {
+    Info "Preserved unrecognized governance block: $path"; continue
+  }
+  Backup-File $path "instructions/$file"
+  [IO.File]::WriteAllText($path, [regex]::Replace($text, $pattern, ''), (New-Object Text.UTF8Encoding($false)))
+}
+Info 'Codex uninstall finished. Foreign files, resource files and backups were retained.'

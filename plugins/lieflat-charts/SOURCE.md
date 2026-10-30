@@ -10,3 +10,7 @@ This plugin packages the **canonical** skill from:
 Skill root: `skills/lieflat-charts/` (`SKILL.md` + `catalog.md` + `templates/` + …).
 
 Treat upstream as 정본. Refresh by replacing `skills/lieflat-charts` from a fresh clone (skip `docs/`) and updating the pin above.
+
+## Codex adaptation (2026-10-31)
+
+The local SKILL.md adds a Codex execution note: respect organizer restrictions, use available tools, and distinguish CLI validation from browser inspection. The upstream renderer and templates are unchanged. User language and established styling take precedence over unnecessary setup questions. The upstream license remains in effect.

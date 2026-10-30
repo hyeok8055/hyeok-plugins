@@ -53,10 +53,10 @@
       "category": "Productivity"
     },
     {
-      "name": "humanize-korean",
+      "name": "juhyeoknizer",
       "source": {
         "source": "local",
-        "path": "./plugins/humanize-korean"
+        "path": "./plugins/juhyeoknizer"
       },
       "policy": {
         "installation": "AVAILABLE",

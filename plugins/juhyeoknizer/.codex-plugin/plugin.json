@@ -1,0 +1,21 @@
+{
+  "name": "juhyeoknizer",
+  "version": "1.0.0",
+  "description": "윤주혁의 문장 호흡과 서식을 적용해 근거를 보존하며 한국어 보고서와 개인 문서를 작성한다.",
+  "author": {
+    "name": "hyeok8055",
+    "url": "https://github.com/hyeok8055"
+  },
+  "homepage": "https://github.com/hyeok8055/hyeok-plugins",
+  "repository": "https://github.com/hyeok8055/hyeok-plugins",
+  "skills": "./skills/",
+  "keywords": ["codex", "openai", "korean", "writing", "report", "resume", "juhyeoknizer"],
+  "interface": {
+    "displayName": "주혁나이저",
+    "shortDescription": "근거를 지키며 주혁의 문체로 쓰는 한국어 문서 스킬",
+    "developerName": "hyeok8055",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": ["Use $juhyeoknizer to draft or revise this Korean document in my voice while preserving the supplied facts."]
+  }
+}

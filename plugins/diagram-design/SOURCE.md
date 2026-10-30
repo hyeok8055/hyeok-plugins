@@ -17,3 +17,7 @@ git clone --depth 1 https://github.com/cathrynlavery/diagram-design.git /tmp/dia
 # replace skills/diagram-design, LICENSE, .claude-plugin/plugin.json, .codex-plugin/plugin.json
 # update the pinned commit above
 ```
+
+## Codex adaptation (2026-10-31)
+
+The local SKILL.md adds a Codex execution note: respect organizer restrictions, use available tools, and distinguish CLI validation from browser inspection. The upstream renderer and templates are unchanged. User language and established styling take precedence over unnecessary setup questions. The upstream license remains in effect.

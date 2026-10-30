@@ -1,145 +1,111 @@
 #!/usr/bin/env sh
-# Reverse install.sh: strip governance sentinels, restore backups, remove
-# defaultMode pins, remove hyeok-marked user skills, best-effort CLI plugin uninstall.
-# Idempotent, fail-open.
-
-set -u
-BEGIN='<!-- BEGIN hyeok-gov -->'
-END='<!-- END hyeok-gov -->'
-MARKER='.hyeok-installed'
-MARKET='hyeok-plugins'
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-info() { echo "[hyeok] $1"; }
-
-restore_or_strip() {
-  path="$1"
-  if [ -f "$path.pre-hyeok.bak" ]; then
-    cp "$path.pre-hyeok.bak" "$path"; rm -f "$path.pre-hyeok.bak"
-    info "restored $path from backup"
-  elif [ -f "$path" ]; then
-    tmp=$(mktemp)
-    awk -v b="$BEGIN" -v e="$END" 'BEGIN{s=0} $0==b{s=1} s==0{print} $0==e{s=0}' "$path" \
-      | awk -v b="$IBEGIN" -v e="$IEND" 'BEGIN{s=0} $0==b{s=1} s==0{print} $0==e{s=0}' > "$tmp"
-    if [ -s "$tmp" ] && grep -q '[^[:space:]]' "$tmp"; then
-      printf '%s\n' "$(cat "$tmp")" > "$path"; info "stripped hyeok blocks from $path"
-    else
-      rm -f "$path"; info "removed $path (was only hyeok blocks)"
-    fi
-    rm -f "$tmp"
-  fi
-}
-
-remove_vendor() {
-  dir="$1"
-  if [ -f "$dir/.hyeok-vendor" ]; then
-    rm -rf "$dir" && info "removed vendored dir $dir"
-  elif [ -f "$dir/SKILL.md.pre-hyeok.bak" ]; then
-    cp "$dir/SKILL.md.pre-hyeok.bak" "$dir/SKILL.md"; rm -f "$dir/SKILL.md.pre-hyeok.bak"
-    info "restored user-owned SKILL.md in $dir"
-  fi
-}
-
-remove_default_mode() {
-  tool="$1"
-  if [ -n "${XDG_CONFIG_HOME:-}" ]; then path="$XDG_CONFIG_HOME/$tool/config.json"; else path="$HOME/.config/$tool/config.json"; fi
-  [ -f "$path" ] || return 0
-  if command -v node >/dev/null 2>&1; then
-    node -e 'const fs=require("fs");const p=process.argv[1];let o=null;try{o=JSON.parse(fs.readFileSync(p,"utf8"))}catch(e){}if(o){delete o.defaultMode;fs.writeFileSync(p,JSON.stringify(o,null,2)+"\n")}' "$path" \
-      && info "$tool: removed defaultMode pin"
-  elif command -v python3 >/dev/null 2>&1; then
-    python3 - "$path" <<'PY' && info "$tool: removed defaultMode pin"
-import json,sys
-p=sys.argv[1]
-try: o=json.load(open(p))
-except Exception: sys.exit(0)
-o.pop("defaultMode",None)
-json.dump(o,open(p,"w"),indent=2)
-open(p,"a").write("\n")
-PY
-  else
-    info "$tool: no node/python; left config.json as-is"
-  fi
-}
-
-remove_marked_skill() {
-  root="$1"; name="$2"
-  dest="$root/$name"
-  bak="$dest.pre-hyeok.bak"
-  if [ -f "$dest/$MARKER" ]; then
-    rm -rf "$dest" && info "removed skill $dest"
-    if [ -e "$bak" ]; then mv "$bak" "$dest" 2>/dev/null && info "restored pre-hyeok skill $dest"; fi
-  elif [ -e "$bak" ]; then
-    rm -rf "$dest" 2>/dev/null
-    mv "$bak" "$dest" 2>/dev/null && info "restored pre-hyeok skill from $bak"
-  fi
-}
-
-restore_or_strip "$HOME/.codex/AGENTS.override.md"
-restore_or_strip "$HOME/.codex/AGENTS.md"
-restore_or_strip "$HOME/.grok/GROK.md"
-restore_or_strip "$HOME/AGENTS.override.md"
-remove_default_mode ponytail
-
-
-for root in "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.grok/skills"; do
-  [ -d "$root" ] || continue
-  for n in hyeok-governance typst-korean diagram-design archify humanize-korean humanize humanize-redo lieflat-charts; do
-    remove_marked_skill "$root" "$n"
-  done
-done
-
-remove_vendor "$HOME/.codex/tools/insane-search"
-remove_vendor "$HOME/.agents/skills/insane-search"
-info "Note: pip packages (curl_cffi/bs4/pyyaml) are intentionally NOT uninstalled."
-
-# Best-effort CLI plugin uninstall
-if command -v claude >/dev/null 2>&1; then
-  for p in hyeok-governance typst-korean diagram-design archify humanize-korean humanize humanize-redo lieflat-charts; do
-    claude plugin uninstall "${p}@${MARKET}" >/dev/null 2>&1 && info "Claude: uninstalled ${p}@${MARKET}" || true
-  done
-fi
-if command -v codex >/dev/null 2>&1; then
-  for p in hyeok-governance typst-korean diagram-design archify humanize-korean humanize humanize-redo lieflat-charts; do
-    codex plugin remove "${p}@${MARKET}" >/dev/null 2>&1 || true
-    codex plugin remove "$p" --marketplace "$MARKET" >/dev/null 2>&1 || true
-    info "Codex: attempted remove $p"
-  done
-fi
-if command -v grok >/dev/null 2>&1; then
-  for p in hyeok-governance typst-korean diagram-design archify humanize-korean humanize humanize-redo lieflat-charts; do
-    grok plugin uninstall "$p" --confirm >/dev/null 2>&1 && info "Grok: uninstalled $p" || true
-  done
-fi
-
-
-# Pretendard fonts installed by hyeok
-remove_pretendard_fonts() {
-  case "$(uname -s 2>/dev/null)" in
-    Darwin) dest="$HOME/Library/Fonts"; shared=1 ;;
-    *) dest="$HOME/.local/share/fonts/hyeok-pretendard"; shared=0 ;;
+# Match install.sh: Codex only. Default skills mode removes only marked,
+# unmodified SKILL.md entry points and the owned AGENTS bootstrap. Resources
+# and backups remain. Restore a recorded foreign SKILL.md when one exists.
+# --mode plugins removes only plugins listed in this installer's receipt.
+# No marketplace removal or model/provider/auth/permissions/MCP configuration.
+# Usage: ./uninstall.sh [--mode skills|plugins] [--target-home /existing/home]
+set -eu
+info() { printf '[hyeok] %s\n' "$*"; }
+die() { printf '[hyeok] ERROR: %s\n' "$*" >&2; exit 1; }
+TARGET_HOME=${HOME:?HOME must be set}; ISOLATED=0; MODE=skills
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --target-home) [ "$#" -ge 2 ] || die '--target-home needs a path'; TARGET_HOME=$2; ISOLATED=1; shift ;;
+    --mode) [ "$#" -ge 2 ] || die '--mode needs a value'; MODE=$2; shift ;;
+    --help|-h) printf '%s\n' 'Usage: ./uninstall.sh [--mode skills|plugins] [--target-home /existing/home]'; exit 0 ;;
+    *) die "Unknown argument: $1" ;;
   esac
-  marker="$dest/.hyeok-installed"
-  # shared Fonts (macOS): only delete if hyeok marker present — never clobber user-installed Pretendard
-  if [ "$shared" = 1 ]; then
-    if [ -f "$marker" ]; then
-      for w in Regular Medium SemiBold Bold; do
-        f="$dest/Pretendard-${w}.otf"
-        [ -f "$f" ] && rm -f "$f" && info "removed $f"
-      done
-      rm -f "$marker"
-    else
-      info "skip shared Fonts Pretendard (no .hyeok-installed marker)"
-    fi
+  shift
+done
+case "$MODE" in skills|plugins) : ;; *) die 'Invalid --mode' ;; esac
+assert_plain_path() (
+  candidate=$1
+  while [ -n "$candidate" ]; do
+    [ ! -L "$candidate" ] || die "Refusing a symlink: $candidate"
+    [ "$candidate" != / ] || break
+    parent=${candidate%/*}; [ -n "$parent" ] || parent=/
+    [ "$parent" != "$candidate" ] || break
+    candidate=$parent; [ "$candidate" != . ] || break
+  done
+)
+case "$TARGET_HOME" in /*) : ;; *) die 'An absolute target home is required' ;; esac
+assert_plain_path "$TARGET_HOME"
+[ -d "$TARGET_HOME" ] || die 'The target home must already exist'
+TARGET_HOME=$(CDPATH= cd -- "$TARGET_HOME" && pwd -P)
+if [ "$ISOLATED" = 0 ] && [ -n "${CODEX_HOME:-}" ]; then CODEX_DIR=$CODEX_HOME; else CODEX_DIR=$TARGET_HOME/.codex; fi
+case "$CODEX_DIR" in /*) : ;; *) die 'CODEX_HOME must be absolute' ;; esac
+assert_plain_path "$CODEX_DIR"
+BACKUP_ROOT=$TARGET_HOME/.hyeok/backups/uninstall-$(date -u +%Y%m%dT%H%M%S)-$$
+backup_file() (
+  dest=$BACKUP_ROOT/$2
+  assert_plain_path "$1"; assert_plain_path "$dest"
+  mkdir -p "$(dirname "$dest")"
+  [ ! -e "$dest" ] || die "Backup already exists: $dest"
+  cp -p "$1" "$dest"
+)
+if [ "$MODE" = plugins ]; then
+  receipt=$TARGET_HOME/.hyeok/codex-plugins-installed
+  assert_plain_path "$receipt"
+  [ -f "$receipt" ] || { info 'No plugins-mode receipt. Nothing removed.'; exit 0; }
+  grep -qx 'installer=codex-plugins-v1' "$receipt" || die 'Foreign plugin receipt; left unchanged'
+  names=$(sed -n 's/^plugin=//p' "$receipt")
+  for name in $names; do
+    case "$name" in hyeok-governance|typst-korean|diagram-design|archify|lieflat-charts|juhyeoknizer) : ;; *) die "Unexpected plugin receipt entry: $name" ;; esac
+  done
+  command -v codex >/dev/null 2>&1 || die 'Codex CLI is required for plugins mode'
+  assert_plain_path "$CODEX_DIR/config.toml"
+  [ ! -f "$CODEX_DIR/config.toml" ] || backup_file "$CODEX_DIR/config.toml" 'plugin-config/config.toml'
+  for name in $names; do
+    CODEX_HOME="$CODEX_DIR" codex plugin remove "$name@hyeok-plugins" --json >/dev/null || die "Could not remove $name; receipt retained for retry"
+    info "Removed plugin $name@hyeok-plugins"
+  done
+  backup_file "$receipt" 'plugin-config/receipt'
+  rm -f "$receipt"
+  exit 0
+fi
+for name in hyeok-governance typst-korean diagram-design archify lieflat-charts juhyeoknizer; do
+  skill_dir=$TARGET_HOME/.agents/skills/$name
+  entry=$skill_dir/SKILL.md; marker=$skill_dir/.hyeok-installed
+  state=$TARGET_HOME/.hyeok/state/skills/$name
+  assert_plain_path "$entry"; assert_plain_path "$marker"; assert_plain_path "$state"
+  [ -f "$marker" ] || continue
+  grep -qx 'installer=codex-skills-v1' "$marker" || continue
+  grep -qx "name=$name" "$marker" || continue
+  assert_plain_path "$state/SKILL.md"
+  if [ -f "$entry" ] && [ -f "$state/SKILL.md" ] && cmp -s "$entry" "$state/SKILL.md"; then
+    backup_file "$entry" "skills/$name/SKILL.md"
+    assert_plain_path "$state/original/SKILL.md"
+    if [ -f "$state/original/SKILL.md" ]; then cp -p "$state/original/SKILL.md" "$entry"; else rm -f "$entry"; fi
+    backup_file "$marker" "skills/$name/.hyeok-installed"
+    rm -f "$marker"
+    info "Deactivated skill $name; resources and backups retained."
   else
-    if [ -d "$dest" ]; then
-      rm -rf "$dest" && info "removed $dest"
-    fi
+    info "Preserved modified or unrecorded skill: $entry"
   fi
-  rm -rf "$HOME/.hyeok/fonts/pretendard" 2>/dev/null || true
-  rm -f "$SCRIPT_DIR/plugins/typst-korean/fonts/"Pretendard-*.otf 2>/dev/null || true
-  rm -f "$SCRIPT_DIR/plugins/typst-korean/fonts/.hyeok-installed" 2>/dev/null || true
-}
-
-remove_pretendard_fonts
-
-info "Uninstall complete."
+done
+for file in AGENTS.override.md AGENTS.md; do
+  path=$CODEX_DIR/$file
+  assert_plain_path "$path"
+  [ -f "$path" ] || continue
+  grep -q 'Use the installed hyeok-governance skill' "$path" || continue
+  tmp=$(mktemp "${TMPDIR:-/tmp}/hyeok-uninstall.XXXXXX")
+  trap 'rm -f "$tmp"' 0
+  trap 'exit 1' 1 2 15
+  if awk -v BINMODE=3 '
+    { line=$0; sub(/\r$/, "", line)
+      if (line=="<!-- BEGIN hyeok-gov -->") { begin++; if (inside) bad=1; inside=1; next }
+      if (line=="<!-- END hyeok-gov -->") { end++; if (!inside) bad=1; inside=0; next }
+      if (inside && index(line,"Use the installed hyeok-governance skill")) owned=1
+      if (!inside) print
+    }
+    END { if (bad || inside || begin!=1 || end!=1 || !owned) exit 1 }
+  ' "$path" > "$tmp"; then
+    backup_file "$path" "instructions/$file"
+    cp "$tmp" "$path"
+  else
+    info "Preserved unrecognized governance block: $path"
+  fi
+  rm -f "$tmp"
+done
+info 'Codex uninstall finished. Foreign files, resource files and backups were retained.'

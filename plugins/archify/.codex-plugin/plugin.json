@@ -2,6 +2,10 @@
   "name": "archify",
   "description": "Turn a codebase or system description into a polished interactive system map (HTML/SVG). Architecture, workflow, sequence, data-flow, lifecycle. Canonical skill from tt-a1i/archify.",
   "version": "2.16.0",
+  "author": {
+    "name": "tt-a1i",
+    "url": "https://github.com/tt-a1i"
+  },
   "homepage": "https://github.com/tt-a1i/archify",
   "repository": "https://github.com/tt-a1i/archify",
   "license": "MIT",
@@ -12,5 +16,16 @@
     "html",
     "system-map",
     "archify"
-  ]
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Archify",
+    "shortDescription": "Interactive system maps",
+    "longDescription": "Create interactive HTML/SVG maps of architecture, workflows, sequences, data flows, and lifecycles from repository evidence or a system description.",
+    "developerName": "tt-a1i",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/tt-a1i/archify",
+    "defaultPrompt": ["Create an interactive system map from this repository."]
+  }
 }

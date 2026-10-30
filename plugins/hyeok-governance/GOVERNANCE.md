@@ -1,123 +1,20 @@
-# GOVERNANCE.md — hyeok-plugins Cross-Host Agent Governance
+# Hyeok governance — OpenAI / Codex
 
-Single source of truth. Loaded/injected on **Claude Code**, **OpenAI Codex CLI**, and **Grok CLI**.
-Host-agnostic, persistent. These are standing orders for every session.
+Codex의 작업 흐름 정본은 [hyeok-governance 스킬](skills/hyeok-governance/SKILL.md)이다.
+스킬 폴더만 설치해도 사용할 수 있도록 실행 지침과 참고 자료를 그 안에 함께 둔다.
 
-## 0. Honest limit (read first)
+- 복합 작업: [요구사항 → 근거 → 설계 → 구현 → 검증 → 정리 → 전달](skills/hyeok-governance/references/codex-flow.md)
+- 모델 역할: [GPT-6.1 Sol / GPT-6 Luna](skills/hyeok-governance/references/model-routing.md)
+- 도구 선택: [기존 스킬과 플러그인, MCP](skills/hyeok-governance/references/tool-routing.md)
+- 필요한 기능 확장: [공식 스킬 제작기, Context7, MCP 구성](skills/hyeok-governance/references/skill-and-mcp-setup.md)
+- 공모전과 평가: [주최측 규정 적용](skills/hyeok-governance/references/organizer-rules.md)
+- 시각화 유형: [시각화 목록](skills/hyeok-governance/references/viz-catalog.md)
 
-An LLM cannot be *physically* forced by config alone. Enforcement here is persistent
-instruction **injection** every session (and, on Claude Code, a one-line reminder per
-turn) — **not** hard tool gates. There are deliberately **no** PreToolUse Edit/Write
-blocks. Treat the rules below as binding standing orders; a non-compliant turn cannot be
-hard-blocked, so comply by intent.
+실행 코드에는 필요한 최소 변경과 필수 검증을 유지한다. Typst는 명시 요청 또는 `.typ` 수정에만
+사용한다. 시각화는 수치 차트, 시스템 맵, 일반 도식 중 목적에 맞는 스킬을 하나 선택한다.
+한국어 보고서, 제안서, 이력서는 `juhyeoknizer`로 작성하고 점검한다. 일반 채팅은 제외한다.
 
-## 1. Five layers (orthogonal, by precedence)
-
-**Layer 1 — ponytail (code policy).**
-Code you write or edit that will be **executed or shipped** obeys the minimal-code ladder:
-(1) need it? no → skip (YAGNI); (2) stdlib → use it; (3) native platform feature → use it;
-(4) installed dependency → use it; (5) one line → one line; (6) only then the minimum that
-works. **Minimal is NOT negligent** — keep validation, error handling, security,
-accessibility. Default intensity = **FULL**; ULTRA opt-in (`/ponytail ultra`).
-
-**Layer 2 — typst-korean (Typst document production — EXPLICIT REQUEST ONLY).**
-Use typst-korean for PDF/document generation **only when the user explicitly asks for it**
-(says "typst", "typst-korean", "in/with Typst", "PDF via typst", or is editing a `**/*.typ`
-file). It is **NOT** the default tool for generic "make a PDF / 보고서 / 장표" requests.
-When it IS explicitly invoked: Typst syntax, Korean fonts (default **Pretendard**),
-CJK typography, templates `/new`, `/new-report`, `/new-slide`, `/pdf`, and ask which font.
-
-**Layer 3 — diagram-design (editorial HTML+SVG diagrams).**
-See **§1.1**. When the user asks for a **diagram** that fits editorial types (architecture sketch,
-flowchart, sequence, state, ER, timeline, swimlane, quadrant, nested, tree, org chart,
-layers, venn, pyramid) and does **not** need Archify's interactive system-map IR,
-use **diagram-design** (canonical skill from cathrynlavery/diagram-design).
-Standalone HTML + inline SVG. No Mermaid-slop unless the user asks for Mermaid/ASCII.
-
-**Layer 4 — archify (interactive system maps — DEFAULT for system/architecture maps).**
-See **§1.1**. When the user wants a **polished interactive system map** from a codebase or system
-description (runtime architecture, workflow, sequence with validation, data flow,
-lifecycle, before/after architecture delta), use **archify** (canonical skill from
-[tt-a1i/archify](https://github.com/tt-a1i/archify), shipped via hyeok-plugins).
-Typed JSON IR → validated HTML/SVG. Prefer Archify over inventing ad-hoc SVG or Mermaid
-for system-mapping asks. Cross-host skill dirs under `~/.claude|codex|agents|grok/skills/archify`.
-
-
-## 1.1 Visualization group — pick ONE skill before any draw tool
-
-These three are a **group**, not three defaults. Do not open a skill or call its
-tools until this table has named the skill. Type catalogs live outside this
-file so they are **not** session-injected: read
-`skills/hyeok-governance/references/viz-catalog.md` after this pick.
-
-| Intent | Skill |
-|---|---|
-| 표·CSV·KPI / “그래프로” | **lieflat-charts** |
-| 시스템·인프라·런타임 맵 | **archify** |
-| 그 외 개념·프로세스 도식 | **diagram-design** |
-
-**Collision (fixed):** system-map → archify > diagram-design. Numeric chart → lieflat only. Two intents → two files. **Exception:** user names a skill or type → honor that.
-
-**lieflat-charts** is vendored at `plugins/lieflat-charts` under **PolyForm Noncommercial 1.0.0** (not MIT). Missing skill → `./install.sh`. Fallback if still missing: diagram-design Bar/Line/Scatter, **one page**. Do not reimplement the 63 templates.
-
-**Layer 5 — humanize-korean / im-not-ai (recorded writing/docs — REQUIRED).**
-Applies when the task is to **author or polish a lasting Korean writing artifact**
-(문서·보고서·기획서·README/문서 초안·블로그·칼럼·고객용 카피·보낼 메일 본문·
-채널에 **남기는** 공지/기록용 글, and rewriting such text). Those **MUST** run through
-**humanize-korean** (upstream [epoko77-ai/im-not-ai](https://github.com/epoko77-ai/im-not-ai))
-before delivery: detect AI tells and humanize style **without changing substance**.
-
-**Does NOT apply** to ordinary chat replies, short back-and-forth, or ephemeral Q&A in
-a conversation — only to writing/document work meant to be kept or shipped as a record.
-Also skip for: pure code/diff, or when the user explicitly says to skip humanize / AI-티 무시.
-
-
-## 2. Task router — when each layer fires
-
-- **ponytail**: ANY authoring/editing of executable or shippable code.
-- **typst-korean**: EXPLICIT Typst request only, OR editing `**/*.typ`.
-- **Visualization group (§1.1)** — pick one skill, then types from `references/viz-catalog.md`:
-  - **archify**: system/architecture maps.
-  - **diagram-design**: editorial diagrams.
-  - **lieflat-charts** (vendored, Noncommercial): numeric HTML charts.
-- **humanize-korean (im-not-ai)**: REQUIRED for **recorded** Korean writing/docs
-  (artifacts to keep or ship). **Not** for ordinary chat replies.
-
-If none fire (chat/Q&A or pure code), no special layer — answer normally.
-
-## 3. Scope boundaries
-
-**ponytail** does NOT govern conversational style, and does NOT touch document **content**.
-Installer/bootstrap and filesystem-mutating automation are EXEMPT from YAGNI.
-
-**typst-korean** does NOT govern executable source; never forces structure the user did
-not request.
-
-**diagram-design / archify / lieflat-charts**: do not invent Mermaid as the default.
-Pick the skill from §1.1, then the type from `references/viz-catalog.md`.
-lieflat-charts is vendored; license stays PolyForm Noncommercial — do not relicense as MIT.
-
-**humanize-korean**: governs Korean **prose style** only (AI-티 제거). Does not change
-facts, numbers, or claims. Does not replace typst-korean layout or diagram skills.
-
-## 4. Conflict resolution
-
-1. **Substance beats style.**
-2. Executable/shippable code → ponytail. Document payload → typst-korean when invoked.
-3. Viz collision: numeric → lieflat only; system-map → archify > diagram; two intents → two files. User-named skill/type wins.
-4. Generic PDF/doc without Typst mention → do NOT auto-use Typst.
-5. Recorded Korean writing/doc artifact → **humanize-korean required** before handoff
-   (after substance is settled; style pass last). Chat replies are out of scope.
-6. **Intensity** → ponytail FULL default; honor explicit `/ponytail` settings.
-
-## 5. Intensity
-
-- **ponytail = FULL** (built-in default; ULTRA opt-in).
-- Config files are **read-merged**, never clobbered.
-
-## 6. Composition summary
-
-ponytail = **how much EXECUTABLE code you write**.
-typst-korean = **Korean Typst documents** (explicit only).
-viz group = **one of** archify (system maps) / diagram-design (editorial) / lieflat-charts (numeric, vendored Noncommercial).
-humanize-korean (im-not-ai) = **required** for recorded Korean writing/docs (not chat).
+기본 지원 대상은 OpenAI/Codex다. Claude, Grok 전용 훅, 명령은 Codex의 기능으로 가정하지 않는다.
+모델과 권한은 임의로 바꾸지 않는다. 필요한 MCP 설정은 사용자 요청 범위에서 수행하고
+설정 저장과 실제 연결 검증을 구분한다. 주최측 규정과 현재 플랫폼의 제한을 우선한다.
+스킬의 지침은 하드 보안 장치가 아니다. 실제 실행 여부와 검증 결과를 구분해서 보고한다.

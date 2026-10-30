@@ -12,3 +12,7 @@ Skill root: `skills/archify/` (`SKILL.md` + renderers + schemas + bin + …).
 Install tip upstream also supports: `npx skills add tt-a1i/archify -g`
 
 Treat upstream as 정본. Refresh by replacing `skills/archify` from a fresh clone of `tt-a1i/archify` (`archify/` subfolder) and updating the pin above.
+
+## Codex adaptation (2026-10-31)
+
+The local SKILL.md adds a Codex execution note: respect organizer restrictions, use available tools, and distinguish CLI validation from browser inspection. The upstream renderer and templates are unchanged. User language and established styling take precedence over unnecessary setup questions. The upstream license remains in effect.
