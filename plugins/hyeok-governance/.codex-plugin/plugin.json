@@ -1,6 +1,6 @@
 {
   "name": "hyeok-governance",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "주혁의 Codex 작업 단계에 맞춰 스킬, 플러그인과 필요한 MCP를 선택하고 구성한다. Sol/Luna 인계와 주최측 규정을 적용한다.",
   "author": {
     "name": "hyeok8055",

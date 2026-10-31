@@ -2,7 +2,7 @@
 name: hyeok-governance
 description: >
   주혁의 Codex 복합 작업에서 구현, 조사, 문서, 시각화에 맞는 스킬과 MCP를 선택하고
-  단계별 인계와 검증을 정한다. 새 스킬 작성과 필요한 도구 설정, Sol/Luna 역할 배분에 사용한다.
+  단계별 인계와 검증을 정한다. 공개 스킬 탐색과 도입, 새 스킬 작성, 필요한 도구 설정과 Sol/Luna 역할 배분에 사용한다.
   짧은 질의응답이나 단순 수정에 전체 흐름을 강제하지 않는다.
 ---
 
@@ -23,6 +23,8 @@ description: >
    모델을 나누거나 작업을 인계할 때만 [모델 배분](references/model-routing.md)을 읽는다.
 4. 새 스킬 작성, 공개 스킬 도입, MCP 설정이 필요하면
    [스킬과 MCP 구성](references/skill-and-mcp-setup.md)을 읽는다.
+   필요한 공개 스킬을 빠르게 찾을 때는 [공급자별 탐색 경로](references/skill-discovery.md)에서
+   기능에 맞는 원본과 실제 `SKILL.md` 위치를 확인한다. 사용자가 준 URL은 먼저 검토한다.
    공모전이나 감독형 평가 준비는 [주최측 규정 적용](references/organizer-rules.md)을 먼저 읽는다.
 
 기본 흐름은 **요구사항 확인 → 근거 수집 → 설계 → 구현 → 검증 → 산출물 정리 → 전달**이다.
@@ -33,6 +35,7 @@ description: >
 | 필요한 결과 | 사용할 스킬, 도구 | 적용 범위 |
 |---|---|---|
 | 실행 코드 | 현재 저장소의 편집, 실행, 테스트 도구 | 필요한 최소 변경. 오류 처리, 보안, 접근성, 필수 검증은 유지 |
+| 웹 UI 디자인과 React 품질 개선 | [공개 스킬 탐색](references/skill-discovery.md) | Vercel, Anthropic, taste-skill 등에서 목적에 맞는 지침 선택. 현재 디자인 시스템과 실행 제한 우선 |
 | 시스템, 인프라, 데이터 흐름 맵 | `archify` | 사실과 구조를 확정한 뒤 해당 스키마와 예제만 읽기 |
 | 그 외 개념, 프로세스 도식 | `diagram-design` | 기존 프로젝트 스타일, 사용자가 정한 스타일을 먼저 확인 |
 | 표, CSV, KPI의 수치 차트 | `lieflat-charts` | 차트 기본, 보고서는 명시 요청 시. PolyForm Noncommercial 라이선스 유지 |

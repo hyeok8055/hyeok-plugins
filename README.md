@@ -95,6 +95,11 @@ MCP가 필요하면 기존 연결을 먼저 확인하고, 없으면 플랫폼이
 과제의 `.agents/skills`에 추가할 수 있다. 선택 커밋과 출처, 사용 범위, 로컬 검증 결과를 기록한다.
 항상 전체 묶음을 설치하거나 매 작업마다 업데이트하지 않는다.
 
+공개 스킬을 빠르게 찾는 경로는 [기능별 스킬 탐색](plugins/hyeok-governance/skills/hyeok-governance/references/skill-discovery.md)에 있다.
+OpenAI, Vercel, Anthropic의 배포처, GitHub 커뮤니티 모음과 skills.sh에서 실제 `SKILL.md`를 찾고
+필요한 항목만 적용한다. 개인 공개 `taste-skill`도 웹 UI 디자인 후보로 포함했다.
+공식 카탈로그와 개인 소스, Claude용 문서 활용과 Claude 실행은 구분한다. 시험의 실행 제한은 그대로 우선한다.
+
 선택적인 MCP를 모든 작업의 필수 의존성으로 묶지 않는다. 인증이나 비용, 권한 확대가 필요한
 부분만 사용자에게 요청한다. 설정 저장, 도구 연결, 실제 호출 성공은 각각 확인한다.
 
