@@ -15,6 +15,17 @@ below. When Computer Use is forbidden, use permitted local resources and static/
 leave visual inspection to the user, and report it as unverified. Never send task files to
 external services or upgrade the provided Codex as part of this skill.
 
+Resolve catalogs, templates, tokens, and scripts from this loaded `SKILL.md`, not the task
+working directory. Save generated artifacts in the task workspace. Static package validation
+is `node "<skill-dir>/scripts/validate.mjs"` when Node.js is available; it does not verify a
+rendered page. For newly authored Korean copy, replace template middle-dot separators with
+commas, slashes, or separate phrases; preserve protected source literals.
+
+For this user's format-unspecified reports, use the available `typst-korean` skill as the
+default report route. Lieflat's full-report mode below applies when HTML reports or Lieflat
+reports are explicitly selected. Charts can still support a report when their license and
+output format fit; preserve explicit submission formats.
+
 Lieflat Charts 是一套遵循 Agent Skills 格式的数据可视化与报告生成 skill，以 Mono 灰阶为保底，也会在数据语义和使用场景明确适配时自动选择一套彩色预设。本 skill 在 [moxt.ai](https://moxt.ai) 制作，支持 Lupi 编辑叙事型、Glance 快速判断型、Basics 基础编辑型、Maps 地图、Interactive 交互大图，以及 `report-catalog.md` 中的 12 套中英文整页报告模板。用户给你数据和场合，可以得到一个无需构建、双击可打开的单文件 HTML 图表或 HTML 报告。纯 SVG 图可离线运行；使用 Chart.js、ECharts、地图 GeoJSON 或在线字体的图，在未内联依赖时需要联网。**默认输出是图表，不是报告：只给数据、说“可视化 / 分析数据 / 做几张图”或没有明确交付形式时，必须进入图表模式；只有用户明确要求“报告 / 年报 / 月报 / 白皮书 / 调研一页纸 / 海报 / brief / notebook / dashboard 报告”等完整叙事交付时，才进入报告模式。** 图表模式下**必须先从 Lupi Editorial 和 Lupi Basics 中选型；只有两者都没有合适模板，或用户明确要求 Glance / dashboard / 三秒快读时，才允许使用 Glance。Maps 只有在用户明确说要地图或地域分布时才启用。**
 
 颜色无需用户显式触发。按第六点五节在 Mono 与 `color-presets.js` 的三套内置方案之间自动判断；用户明确给出品牌色或自定义色值时，可以建立一套交付内的 custom 色板。同一份 HTML 或同一组交付只能锁定一种色彩系统，不得混用。换肤样张在 `templates/color/`。
@@ -359,7 +370,7 @@ report-catalog.md                # 先按场景选 R01–R12
 templates/reports/report-NN.zh.html  # 中文整页正本
 templates/reports/report-NN.en.html  # English full-page source
 templates/reports/index.html         # 本地可打开的模板索引
-docs/assets/reports/report-NN.png    # 中文版静态预览
+docs/assets/reports/report-NN.png    # 上游静态预览，本分发不包含
 ```
 
 报告交付仍然是单文件 HTML；`templates/reports/` 中的文件是可复制的起始骨架，不是需要逐字照抄的内容样例。模板内的演示数据只用于展示结构，生成最终报告时必须全部替换。

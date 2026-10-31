@@ -1,7 +1,7 @@
 #!/bin/sh
 # Project-only Codex CLI setup. Requires only POSIX shell utilities.
 # Usage: sh /path/to/hyeok-plugins/scripts/setup-codex-workspace.sh
-#        [--workspace /existing/project] [--check]
+#        [--workspace /existing/project] [--fallback-file NAME] [--check]
 # No network, CLI installation, home/config writes, or exam actions.
 # Resources: https://learn.chatgpt.com/docs/build-skills
 #            https://learn.chatgpt.com/docs/agent-configuration/agents-md
@@ -11,11 +11,13 @@ die() { info "ERROR: $*" >&2; exit 1; }
 warn() { info "WARNING: $*" >&2; }
 WORKSPACE=$(pwd -L)
 CHECK=0
+FALLBACK_FILE=
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --workspace) [ "$#" -ge 2 ] || die '--workspace needs an absolute directory'; WORKSPACE=$2; shift ;;
+    --fallback-file) [ "$#" -ge 2 ] && [ -n "$2" ] || die '--fallback-file needs the existing active fallback filename'; FALLBACK_FILE=$2; shift ;;
     --check) CHECK=1 ;;
-    --help|-h) printf '%s\n' 'Usage: sh setup-codex-workspace.sh [--workspace /existing/project] [--check]' 'Default: current directory. --check performs read-only preflight.'; exit 0 ;;
+    --help|-h) printf '%s\n' 'Usage: sh setup-codex-workspace.sh [--workspace /existing/project] [--fallback-file NAME] [--check]' 'Default: current directory. --check performs read-only preflight.' '--fallback-file: existing first non-empty filename from the effective project_doc_fallback_filenames, used only when standard AGENTS files are empty or absent. Verify the active filename before running; no configuration is changed.'; exit 0 ;;
     *) die "Unknown argument: $1" ;;
   esac
   shift
@@ -66,13 +68,67 @@ done
 for f in "$STATE/owner" "$STATE/manifest"; do
   [ ! -e "$f" ] || [ -f "$f" ] || die "Expected state file: $f"
 done
+# Standard repository discovery stops at the nearest .git directory or worktree file.
+# Without a repository, only the workspace participates in project discovery.
+PROJECT_ROOT=$WORKSPACE
+ancestor=$WORKSPACE
+while :; do
+  if [ -e "$ancestor/.git" ]; then PROJECT_ROOT=$ancestor; break; fi
+  [ "$ancestor" != / ] || break
+  ancestor=${ancestor%/*}; [ -n "$ancestor" ] || ancestor=/
+done
+# Only detect declarations, without parsing/printing effective configuration.
+# CLI/profile/cloud overrides cannot be inferred by this standalone script.
+FALLBACK_DECLARED=0
+fallback_config() {
+  if [ -f "$1" ] && grep -Eq "^[[:space:]]*['\"]?project_doc_fallback_filenames['\"]?[[:space:]]*=" "$1"; then
+    FALLBACK_DECLARED=1
+  fi
+}
+fallback_config "${CODEX_HOME:-${HOME:-}/.codex}/config.toml"
+fallback_config /etc/codex/config.toml
+ancestor=$WORKSPACE
+while :; do
+  fallback_config "$ancestor/.codex/config.toml"
+  if [ "$ancestor" != "$WORKSPACE" ]; then
+    for name in $SKILLS humanize-korean humanize humanize-redo; do
+      for skill_root in "$ancestor/.agents/skills" "$ancestor/.codex/skills"; do
+        [ ! -f "$skill_root/$name/SKILL.md" ] || die "Duplicate/legacy parent repository skill: $skill_root/$name. Resolve discovery overlap before setup; no files changed."
+      done
+    done
+  fi
+  [ "$ancestor" != "$PROJECT_ROOT" ] || break
+  ancestor=${ancestor%/*}; [ -n "$ancestor" ] || ancestor=/
+done
+for candidate in "$WORKSPACE/AGENTS.override.md" "$WORKSPACE/AGENTS.md"; do
+  plain_path "$candidate"
+  [ ! -e "$candidate" ] || [ -f "$candidate" ] || die "Expected file: $candidate"
+done
+nonempty() { [ -f "$1" ] && grep -q '[^[:space:]]' "$1"; }
 AGENTS=$WORKSPACE/AGENTS.md
-if [ -e "$WORKSPACE/AGENTS.override.md" ] || [ -L "$WORKSPACE/AGENTS.override.md" ]; then
+if nonempty "$WORKSPACE/AGENTS.override.md"; then
   AGENTS=$WORKSPACE/AGENTS.override.md
   info 'Using existing AGENTS.override.md because it takes precedence over AGENTS.md.'
 fi
+if nonempty "$AGENTS"; then
+  [ -z "$FALLBACK_FILE" ] || die '--fallback-file would be hidden by a non-empty standard AGENTS file; no files changed'
+elif [ -n "$FALLBACK_FILE" ]; then
+  case "$FALLBACK_FILE" in
+    .|..|*/*|*'\'*|*'
+'*|*"$(printf '\r')"*|AGENTS.md|AGENTS.override.md) die '--fallback-file must name an existing non-empty fallback in the workspace' ;;
+  esac
+  AGENTS=$WORKSPACE/$FALLBACK_FILE
+  plain_path "$AGENTS"
+  nonempty "$AGENTS" || die '--fallback-file must name an existing non-empty fallback in the workspace'
+  info "Using explicitly selected active fallback: $FALLBACK_FILE"
+elif [ "$FALLBACK_DECLARED" = 1 ]; then
+  die 'A project_doc_fallback_filenames declaration may affect instruction discovery. Verify effective settings and use --fallback-file NAME for the active fallback; no files changed. If none is active, preserve the task guidance in AGENTS.md first.'
+fi
 plain_path "$AGENTS"
 [ ! -e "$AGENTS" ] || [ -f "$AGENTS" ] || die "Expected file: $AGENTS"
+if [ -f "$AGENTS" ] && [ "$(wc -c < "$AGENTS")" -ge 32000 ]; then
+  warn 'Instruction file approaches the default combined 32 KiB project_doc_max_bytes limit; appended governance may be truncated. Verify active guidance, including global/parent files; settings are unchanged.'
+fi
 BEGIN='<!-- BEGIN hyeok-gov -->'
 END='<!-- END hyeok-gov -->'
 if [ -f "$AGENTS" ]; then
@@ -191,4 +247,4 @@ printf 'managed-block=%s\n' "${AGENTS#"$WORKSPACE/"}" >> "$TMP/manifest"
 put_file "$TMP/agents" "$AGENTS"
 put_file "$TMP/owner" "$STATE/owner"
 put_file "$TMP/manifest" "$STATE/manifest"
-info "Installed 6 complete skills in $ROOT. Ownership: $STATE. Restart Codex in the workspace to reload."
+info "Installed 6 complete skills in $ROOT. Ownership: $STATE. Skills are detected automatically. Use the provided reload flow; a new CLI session loads project instructions. Do not stop managed processes."

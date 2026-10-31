@@ -112,7 +112,7 @@ The final-state capture contract is synchronous: `?motion=static`, `<html data-m
 
 PNG and SVG exports are static final-state artifacts unless the user explicitly requests a named step. Before capture, open `?motion=static`, await `document.fonts.ready`, and assert `data-frame="static"`. SVG extraction omits HTML controls and scripts; source-visible semantic markup keeps the result complete.
 
-Run:
+In an upstream maintainer checkout, run these checks only when the scripts exist:
 
 ```bash
 python3 scripts/verify-motion.py path/to/animated-diagram.html
@@ -122,7 +122,12 @@ python3 scripts/lint-skin.py path/to/animated-diagram.html
 
 The verifier checks mode/state declarations, contiguous steps, motion budgets, complete SVG naming, no-JS source visibility, decorative accessibility, the full control set, live status, reduced-motion/print CSS, keyboard handling, page-hide pause, bounded static/test overrides, immediate final-step stop, and exact canonical-controller identity. Its adversarial tests mutate the canonical template to prove each failure is rejected.
 
-Then verify in a browser:
+The bundled/standalone skill instead ships `scripts/self_check.py`. Run it using the resolved
+skill directory and the absolute artifact path; it covers only the subset stated in its help.
+Do not call missing maintainer scripts or report their full verification as passed.
+
+When browser automation is permitted and available, also verify in a browser. In a restricted
+evaluation, leave these checks to the user and report them as unverified:
 
 1. Disable JavaScript: the complete diagram remains visible and meaningful.
 2. Emulate `prefers-reduced-motion: reduce`: the final state is complete, playback controls are hidden and disabled, and the DOM status says playback is unavailable.

@@ -19,6 +19,12 @@ or browser exports. Run permitted local validation and delivery commands, and re
 inspection as unverified for the user to check manually. Skip network update checks in that
 environment; do not upgrade the provided Codex. Do not send task files to external services.
 
+Resolve packaged paths from the directory containing this loaded `SKILL.md`, not the task's
+working directory. From the task workspace, invoke `node "<skill-dir>/bin/archify.mjs" ...`
+with absolute input/output paths; the short commands below are relative to `<skill-dir>`.
+Check for Node.js 18+ first. If it is unavailable, use the documented SVG fallback and report
+the CLI checks as unrun. References to optional tools never make absent tools available.
+
 Create a self-contained, interactive HTML diagram from a small typed JSON specification. Static output is the default; enable motion only when the user asks for a demo or presentation.
 
 ## Fast authoring path
@@ -106,7 +112,8 @@ Read `references/authoring-contract.md` only when you need field enums, spacing 
 
 Use `validate` during repair and `deliver` once for final acceptance. Delivery freezes the exact specification bytes into a private same-directory snapshot, renders and checks that snapshot, atomically commits the HTML, and reports SHA-256 plus byte counts for both specification and artifact. This is deterministic artifact evidence; it does not exercise the Viewer in a browser.
 
-After delivery, collect bounded desktop evidence without modifying or rerendering the trusted HTML:
+After delivery, collect bounded desktop evidence only when browser automation is permitted
+and a supported local browser is available, without modifying or rerendering the trusted HTML:
 
 ```bash
 node bin/archify.mjs visual-check <output.html> --json

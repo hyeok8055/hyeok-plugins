@@ -16,6 +16,11 @@ Load this file when:
 
 The slash command is a thin wrapper that delegates here — both paths run the same procedure below.
 
+Codex CLI uses the natural-language request or the actual `$diagram-design` skill; the legacy
+slash wrapper need not exist. Organizer restrictions override browser-based PNG export and
+screenshots. If Computer Use is forbidden, offer the permitted HTML/SVG artifact for manual
+inspection instead; do not install or launch Playwright to work around the restriction.
+
 ## Scope
 
 Both formats are **diagram-only** — just the `<svg>` node. Editorial wrappers (header, summary cards, footer in `-full` variants) are intentionally dropped: the export deliverable is the diagram itself, suitable for Figma, slides, social cards, or blog images.
@@ -54,8 +59,11 @@ Render **the original HTML** (not the extracted SVG) and screenshot only the `<s
 
 Before running anything, verify Playwright is installed:
 
+Use the available interpreter resolved for this skill (`python3` below); do not assume a
+`python` alias exists on the server. This detection is unnecessary when browser use is forbidden.
+
 ```
-python -c "import playwright" 2>NUL || python -c "import playwright"
+python3 -c "import playwright"
 ```
 
 If the import fails, surface this exact instruction to the user and stop:
@@ -71,7 +79,7 @@ Don't auto-install. The user asked for one feature, not a system change.
 
 ### Rasterize
 
-Write the snippet below to a temp file and run it with `python <tmp.py> <src.html> <out.png>`:
+Write the snippet below to a temp file and run it with `python3 <tmp.py> <src.html> <out.png>`:
 
 ```python
 from playwright.sync_api import sync_playwright
@@ -83,7 +91,7 @@ scale = int(sys.argv[3]) if len(sys.argv) > 3 else 2
 with sync_playwright() as p:
     browser = p.chromium.launch()
     page = browser.new_page(device_scale_factor=scale)
-    page.goto(f"file://{pathlib.Path(src).resolve()}")
+    page.goto(pathlib.Path(src).resolve().as_uri())
     page.wait_for_load_state("networkidle")
     page.locator("svg").first.screenshot(path=out, omit_background=True)
     browser.close()

@@ -18,6 +18,14 @@ For style setup, reuse an established project style or the user's earlier choice
 unbranded project, use the shipped defaults unless the user asks for customization. Ask only
 when a missing brand decision materially affects the requested output; do not repeat a choice.
 
+Resolve packaged paths from this loaded `SKILL.md`. Invoke shipped helpers as
+`python3 "<skill-dir>/scripts/self_check.py" "<absolute-output.html>"` from the task workspace,
+using an available Python 3.10+ interpreter. Only run helpers that exist. References to
+upstream `verify-*.py` or `lint-skin.py` are maintainer checks, not bundled runtime tools;
+use the shipped self-check and review the relevant data/layout rules when those are absent.
+Treat named optional skills and host-specific slash commands as available only if the current
+session exposes them. In a restricted evaluation, browser-based checks remain unverified.
+
 Create visual diagrams as self-contained HTML files with inline SVG and CSS, following an opinionated editorial design system.
 
 Thirty-nine visual types. Semantic patterns describe behavior independently; type references describe layout. Details load from `references/` only when selected.
@@ -26,7 +34,7 @@ Thirty-nine visual types. Semantic patterns describe behavior independently; typ
 
 ## 0. First-time setup — style guide gate
 
-**Before generating your first diagram in a new project, verify the style guide has been customized.**
+**In a branded project with an unresolved style choice, verify the style guide before the first diagram.** Apply the Codex execution context above for established styles and unbranded projects.
 
 Don't silently ship default-skinned diagrams into a branded project.
 

@@ -14,3 +14,5 @@ Treat upstream as 정본. Refresh by replacing `skills/lieflat-charts` from a fr
 ## Codex adaptation (2026-10-31)
 
 The local SKILL.md adds a Codex execution note: respect organizer restrictions, use available tools, and distinguish CLI validation from browser inspection. The upstream renderer and templates are unchanged. User language and established styling take precedence over unnecessary setup questions. The upstream license remains in effect.
+
+CLI portability review: move `agents/openai.yaml` inside the skill, validate the distributed runtime without omitted upstream preview assets, normalize validator paths, and resolve authored output separately from packaged resources.

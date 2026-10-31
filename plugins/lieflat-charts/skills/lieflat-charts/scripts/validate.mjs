@@ -26,7 +26,6 @@ const requiredColorTemplates = [
   'templates/color/maps-wire.html',
 ];
 const required = [
-  'README.md',
   'LICENSE',
   'SKILL.md',
   'catalog.md',
@@ -41,8 +40,9 @@ for (let i = 1; i <= 12; i += 1) {
   const n = String(i).padStart(2, '0');
   required.push(`templates/reports/report-${n}.zh.html`);
   required.push(`templates/reports/report-${n}.en.html`);
-  required.push(`docs/assets/reports/report-${n}.png`);
 }
+// The distributed skill omits the upstream README and docs preview PNGs;
+// validate all shipped runtime resources without requiring maintainer assets.
 
 const failures = [];
 const htmlFiles = [];
@@ -89,7 +89,7 @@ function walk(dir) {
 }
 
 function rel(file) {
-  return path.relative(root, file);
+  return path.relative(root, file).split(path.sep).join('/');
 }
 
 function lineNumber(source, index) {

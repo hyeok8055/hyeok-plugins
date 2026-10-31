@@ -19,12 +19,12 @@
 
 ## 검사기
 
-스킬 폴더를 기준으로 실행한다. 대상 서버에서 확인한 Python 3.9 이상 실행기와 표준 라이브러리만 필요하다. 아래 `python3`는 실제 사용 가능한 실행기로 바꿀 수 있다. 개인 PC의 경로를 서버에 적용하지 않는다. 입력은 UTF-8 텍스트 파일 또는 표준 입력 `-`다.
+로드한 `SKILL.md`의 폴더를 `<skill-dir>`로 확정한다. 작업 폴더에서 스크립트의 절대 경로와 실제 문서 경로를 전달한다. 대상 서버에서 확인한 Python 3.9 이상 실행기와 표준 라이브러리만 필요하다. 아래 `python3`는 실제 사용 가능한 실행기로 바꿀 수 있다. 개인 PC의 경로를 서버에 적용하지 않는다. 입력은 UTF-8 텍스트 파일 또는 표준 입력 `-`다.
 
 ```sh
-python3 scripts/check_prose.py draft.txt --target plain
-python3 scripts/check_prose.py draft.md --target markdown --source original.md --format json
-python3 scripts/check_prose.py draft.txt --protect-literal '정확히 보존할 명칭' --strict
+python3 "<skill-dir>/scripts/check_prose.py" draft.txt --target plain
+python3 "<skill-dir>/scripts/check_prose.py" draft.md --target markdown --source original.md --format json
+python3 "<skill-dir>/scripts/check_prose.py" draft.txt --protect-literal '정확히 보존할 명칭' --strict
 ```
 
 - 새로 작성한 영역의 U+00B7, U+0387, U+2022, U+2027, U+2219, U+22C5, U+30FB, U+318D, U+FF65를 오류로 표시한다. U+25E6은 허용한다.
@@ -47,5 +47,5 @@ python3 scripts/check_prose.py draft.txt --protect-literal '정확히 보존할 
 2026-10-31 확인. 파일 구조와 메타데이터를 참고한 공식 문서다. 글쓰기 지문과 위 작업 배분은 사용자가 정한 규칙이다.
 
 - [OpenAI: Build skills](https://learn.chatgpt.com/docs/build-skills): `SKILL.md`의 이름/설명, 선택적 참조/스크립트, `agents/openai.yaml`, 기본 자동 호출.
-- [OpenAI: Plugin packaging](https://developers.openai.com/api/docs/guides/agents-api/tools/plugins): `.codex-plugin/plugin.json`과 플러그인 내부 상대 경로.
+- [OpenAI: Plugin packaging](https://developers.openai.com/plugins/build/plugins): 플러그인 내부 상대 경로와 기존 `.codex-plugin/plugin.json` 호환 형식.
 - [GPT-6.1 Sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol), [GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna): 모델 이름과 공식 ID 확인용. 모델 설정 변경을 요구하는 의존성은 아니다.

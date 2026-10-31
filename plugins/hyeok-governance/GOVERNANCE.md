@@ -10,8 +10,8 @@ Codex의 작업 흐름 정본은 [hyeok-governance 스킬](skills/hyeok-governan
 - 공모전과 평가: [주최측 규정 적용](skills/hyeok-governance/references/organizer-rules.md)
 - 시각화 유형: [시각화 목록](skills/hyeok-governance/references/viz-catalog.md)
 
-실행 코드에는 필요한 최소 변경과 필수 검증을 유지한다. Typst는 명시 요청 또는 `.typ` 수정에만
-사용한다. 시각화는 수치 차트, 시스템 맵, 일반 도식 중 목적에 맞는 스킬을 하나 선택한다.
+실행 코드에는 필요한 최소 변경과 필수 검증을 유지한다. 일반 보고서와 신규 PDF 보고서는 사용자의 기본 선호인
+Typst를 사용한다. 명시된 제출 형식과 기존 문서 형식은 우선한다. 시각화는 목적에 맞는 스킬을 선택한다.
 한국어 보고서, 제안서, 이력서는 `juhyeoknizer`로 작성하고 점검한다. 일반 채팅은 제외한다.
 
 기본 지원 대상은 OpenAI/Codex다. Claude, Grok 전용 훅, 명령은 Codex의 기능으로 가정하지 않는다.

@@ -323,6 +323,10 @@ typst compile --font-path ./fonts document.typ
 
 **증상**: `command not found: typst`
 
+아래는 일반 개발 환경의 설치 예시다. 제공 서버에서는 먼저 설치 허용 여부와 공개 배포처를 확인한다.
+시스템 패키지 관리자, 관리자 권한이나 전역 변경을 자동으로 사용하지 않는다. 허용되면 공식 릴리스의
+실제 버전과 체크섬을 확인해 작업용 경로에서 실행할 수 있다. 설치가 불가하면 소스와 미컴파일 상태를 전달한다.
+
 **해결 방법**:
 
 ```bash
@@ -366,15 +370,18 @@ pacman -S typst
 typst fonts | grep -iE "(noto|malgun|gothic|batang|gulim|dotum)"
 ```
 
-### PDF 출력 시 이미지 깨짐
+### 이미지 해상도와 PNG 출력
 
 **증상**: 이미지 품질이 낮음
 
 **해결 방법**:
 
+PDF 안의 래스터 이미지 선명도는 원본 픽셀 수와 배치 크기로 확인한다. 가능하면 적절한 SVG나
+충분한 해상도의 원본을 사용한다. `--ppi`는 PNG 출력용이며 기존 PDF 이미지의 정보를 늘리지 않는다.
+
 ```bash
-# PPI 설정 (기본 144, 인쇄용은 300 권장)
-typst compile --ppi 300 document.typ
+# 로컬 PNG 검증용 출력. 여러 페이지면 {p}가 페이지 번호로 바뀐다.
+typst compile --format png --ppi 144 document.typ 'page-{p}.png'
 ```
 
 ### 컴파일 에러 디버깅

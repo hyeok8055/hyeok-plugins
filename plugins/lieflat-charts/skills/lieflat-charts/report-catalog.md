@@ -2,7 +2,7 @@
 
 > 报告模板决定整页的叙事顺序、版心、模块密度和阅读速度；页内图表仍须遵守 `catalog.md` 的数据契约。下表的场景是推荐用法，不是硬性限制：同一套版式可以迁移到金融经济、研究、业务、产品和个人记录等不同内容。
 > 每套模板提供中文和英文两个独立版本：`templates/reports/report-NN.zh.html` 与 `templates/reports/report-NN.en.html`。
-> 可视化索引在 `templates/reports/index.html`，静态预览在 `docs/assets/reports/`。
+> 可视化索引在 `templates/reports/index.html`。上游的 `docs/assets/reports/` 静态预览未包含在本分发中；直接读取模板 HTML，不依赖预览 PNG。
 
 ## 选型顺序
 
